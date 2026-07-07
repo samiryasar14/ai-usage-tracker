@@ -3,9 +3,11 @@ import { formatCompact, formatCount, formatCurrency } from "../format";
 
 interface ProjectsTableProps {
   rows: ProjectAnalyticsRow[];
+  onSelect?: (projectId: string) => void;
+  selectedProjectId?: string | null;
 }
 
-export function ProjectsTable({ rows }: ProjectsTableProps) {
+export function ProjectsTable({ rows, onSelect, selectedProjectId }: ProjectsTableProps) {
   return (
     <table className="w-full text-sm">
       <thead>
@@ -20,7 +22,13 @@ export function ProjectsTable({ rows }: ProjectsTableProps) {
       </thead>
       <tbody>
         {rows.map((row) => (
-          <tr key={row.projectId} className="border-b border-hairline last:border-0">
+          <tr
+            key={row.projectId}
+            onClick={onSelect ? () => onSelect(row.projectId) : undefined}
+            className={`border-b border-hairline last:border-0 ${onSelect ? "cursor-pointer hover:bg-text-primary/[0.03]" : ""} ${
+              selectedProjectId === row.projectId ? "bg-text-primary/[0.05]" : ""
+            }`}
+          >
             <td className="py-2 text-text-primary" title={row.path}>
               {row.name}
             </td>

@@ -36,7 +36,7 @@ export function SubscriptionsPanel({ subscriptions, onAdd, onDelete, adding }: S
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Cursor Pro"
-            className="w-40 rounded-md border border-hairline bg-transparent px-2 py-1 text-text-primary"
+            className="w-40 rounded-md border border-hairline bg-transparent px-2 py-1 text-text-primary transition-colors focus:border-series-1 focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm text-text-secondary">
@@ -47,7 +47,7 @@ export function SubscriptionsPanel({ subscriptions, onAdd, onDelete, adding }: S
             step={1}
             value={monthlyCostUsd}
             onChange={(e) => setMonthlyCostUsd(Number(e.target.value))}
-            className="w-28 rounded-md border border-hairline bg-transparent px-2 py-1 text-text-primary"
+            className="w-28 rounded-md border border-hairline bg-transparent px-2 py-1 text-text-primary transition-colors focus:border-series-1 focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm text-text-secondary">
@@ -58,13 +58,13 @@ export function SubscriptionsPanel({ subscriptions, onAdd, onDelete, adding }: S
             max={31}
             value={renewalDay}
             onChange={(e) => setRenewalDay(Number(e.target.value))}
-            className="w-24 rounded-md border border-hairline bg-transparent px-2 py-1 text-text-primary"
+            className="w-24 rounded-md border border-hairline bg-transparent px-2 py-1 text-text-primary transition-colors focus:border-series-1 focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
           />
         </label>
         <button
           type="submit"
           disabled={adding || !name.trim()}
-          className="rounded-md bg-text-primary px-3 py-1.5 text-sm font-medium text-surface disabled:opacity-50"
+          className="rounded-md bg-text-primary px-3 py-1.5 text-sm font-medium text-surface transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50"
         >
           {adding ? "Adding…" : "Add"}
         </button>
@@ -82,18 +82,21 @@ export function SubscriptionsPanel({ subscriptions, onAdd, onDelete, adding }: S
         </thead>
         <tbody>
           {subscriptions.map((sub) => (
-            <tr key={sub.id} className="border-b border-hairline last:border-0">
+            <tr
+              key={sub.id}
+              className="border-b border-hairline transition-colors last:border-0 hover:bg-hairline/10"
+            >
               <td className="py-2 text-text-primary">{sub.name}</td>
               <td className="py-2 text-right tabular-nums text-text-primary">
                 {formatCurrency(sub.monthlyCostUsd)}
               </td>
               <td className="py-2 text-right tabular-nums text-text-secondary">Day {sub.renewalDay}</td>
-              <td className="py-2 text-text-secondary">{sub.status}</td>
+              <td className="py-2 text-text-secondary capitalize">{sub.status}</td>
               <td className="py-2 text-right">
                 <button
                   type="button"
                   onClick={() => onDelete(sub.id)}
-                  className="text-xs text-text-muted hover:text-text-primary"
+                  className="rounded-sm text-xs text-text-muted transition-colors hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
                 >
                   Remove
                 </button>
@@ -102,7 +105,7 @@ export function SubscriptionsPanel({ subscriptions, onAdd, onDelete, adding }: S
           ))}
           {subscriptions.length === 0 && (
             <tr>
-              <td colSpan={5} className="py-4 text-center text-text-muted">
+              <td colSpan={5} className="py-6 text-center text-sm text-text-muted">
                 No subscriptions tracked yet.
               </td>
             </tr>

@@ -15,9 +15,22 @@ import { getAlertRules, setMonthlyBudgetRule, getAlertEvents, checkBudgetAlerts 
 import { listSubscriptions, createSubscription, updateSubscription, deleteSubscription } from "./subscriptions.js";
 import { getReportRows, toCsv, type ReportPeriod } from "./reports.js";
 import { getMonthlyCostForecast } from "./forecast.js";
+import { listAssistantMessages, answerAssistantQuestion } from "./assistant.js";
+import { getRecommendedProjectLimit } from "./recommendations.js";
 
 const PORT = Number(process.env.PORT ?? 4317);
 const INGEST_INTERVAL_MS = 10_000;
+
+// Packaged builds set these to point at a fresh per-user database that's
+// never been through `prisma migrate dev`; dev/CI leave them unset and rely
+// on the dev database already being migrated. See migrate.ts for why.
+if (process.env.RUN_APP_MIGRATIONS === "1") {
+  if (!process.env.MIGRATIONS_DIR) {
+    throw new Error("RUN_APP_MIGRATIONS=1 requires MIGRATIONS_DIR to be set");
+  }
+  const { runMigrations } = await import("./migrate.js");
+  await runMigrations(process.env.MIGRATIONS_DIR);
+}
 
 const app = Fastify({ logger: true });
 await app.register(cors, { origin: true });
@@ -98,6 +111,18 @@ app.put<{
 app.delete<{ Params: { id: string } }>("/api/subscriptions/:id", async (req, reply) => {
   await deleteSubscription(req.params.id);
   reply.code(204);
+});
+
+app.get("/api/assistant/messages", async () => listAssistantMessages());
+
+app.post<{ Body: { content: string } }>("/api/assistant/messages", async (req, reply) => {
+  const reply_ = await answerAssistantQuestion(req.body.content);
+  reply.code(201);
+  return reply_;
+});
+
+app.get<{ Params: { id: string } }>("/api/projects/:id/recommendation", async (req) => {
+  return getRecommendedProjectLimit(req.params.id);
 });
 
 const VALID_PERIODS: ReportPeriod[] = ["day", "week", "month"];

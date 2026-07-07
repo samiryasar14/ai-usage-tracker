@@ -12,6 +12,7 @@ interface ClaudeCodeLogLine {
   cwd?: string;
   entrypoint?: string;
   isApiErrorMessage?: boolean;
+  isSidechain?: boolean;
   message?: {
     model?: string;
     usage?: {
@@ -74,5 +75,6 @@ export function parseTranscriptLine(rawLine: string): NormalizedUsageRecord | nu
     outputTokens: usage.output_tokens ?? 0,
     cacheReadTokens: usage.cache_read_input_tokens ?? 0,
     cacheCreationTokens: usage.cache_creation_input_tokens ?? 0,
+    isSidechain: parsed.isSidechain === true,
   };
 }

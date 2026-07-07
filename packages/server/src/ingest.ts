@@ -5,6 +5,9 @@ import { ClaudeCodePlugin } from "@ai-usage-tracker/plugin-claude-code";
 
 const plugins = [new ClaudeCodePlugin()];
 
+// Warn at most once per unpriced model per process lifetime, not once per request.
+const warnedUnpricedModels = new Set<string>();
+
 /** Persists normalized usage records, upserting Provider/Project/Session/Model as needed. */
 export async function persistRecords(records: NormalizedUsageRecord[]): Promise<number> {
   if (records.length === 0) return 0;
@@ -30,9 +33,15 @@ export async function persistRecords(records: NormalizedUsageRecord[]): Promise<
     });
 
     const pricing = getModelPricing(record.modelName);
+    if (!pricing && !warnedUnpricedModels.has(record.modelName)) {
+      warnedUnpricedModels.add(record.modelName);
+      console.warn(
+        `[ingest] No pricing entry for model "${record.modelName}" — its requests will be recorded with cost=0 until pricing.ts is updated.`,
+      );
+    }
     const model = await db.model.upsert({
       where: { providerId_name: { providerId: provider.id, name: record.modelName } },
-      update: {},
+      update: { pricingUnknown: !pricing },
       create: {
         providerId: provider.id,
         name: record.modelName,
@@ -41,6 +50,7 @@ export async function persistRecords(records: NormalizedUsageRecord[]): Promise<
         outputPricePerMTok: pricing?.outputPerMTok ?? 0,
         cacheReadPricePerMTok: pricing?.cacheReadPerMTok ?? 0,
         cacheWritePricePerMTok: pricing?.cacheWrite5mPerMTok ?? 0,
+        pricingUnknown: !pricing,
       },
     });
 
@@ -71,6 +81,7 @@ export async function persistRecords(records: NormalizedUsageRecord[]): Promise<
         outputTokens: record.outputTokens,
         cacheReadTokens: record.cacheReadTokens,
         cacheCreationTokens: record.cacheCreationTokens,
+        isSidechain: record.isSidechain,
         cost,
       },
     });

@@ -9,12 +9,18 @@
   "scripts": {
     "dev:server": "pnpm --filter @ai-usage-tracker/server dev",
     "dev:dashboard": "pnpm --filter @ai-usage-tracker/dashboard dev",
+    "dev:website": "pnpm --filter @ai-usage-tracker/website dev",
     "dev:desktop": "pnpm --filter @ai-usage-tracker/desktop dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
+    "predist:desktop": "pnpm build && rimraf packages/server/deploy && pnpm --filter @ai-usage-tracker/server deploy packages/server/deploy --prod --config.node-linker=hoisted && pnpm --filter @ai-usage-tracker/server exec node scripts/copy-generated-prisma.mjs",
+    "dist:desktop": "pnpm --filter @ai-usage-tracker/desktop dist",
     "db:generate": "pnpm --filter @ai-usage-tracker/db generate",
     "db:migrate": "pnpm --filter @ai-usage-tracker/db migrate",
     "db:seed": "pnpm --filter @ai-usage-tracker/db seed"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

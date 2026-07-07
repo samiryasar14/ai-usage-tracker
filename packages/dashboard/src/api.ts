@@ -1,5 +1,10 @@
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:4317";
 
+export interface UnpricedModel {
+  name: string;
+  requestCount: number;
+}
+
 export interface Overview {
   todayRequests: number;
   todayTokens: number;
@@ -7,6 +12,7 @@ export interface Overview {
   estimatedMonthlyCost: number;
   modelsUsed: number;
   providersConnected: number;
+  unpricedModels: UnpricedModel[];
 }
 
 export interface TimelineDay {
@@ -92,6 +98,20 @@ export interface MonthlyCostForecast {
 export type ReportPeriod = "day" | "week" | "month";
 export type ReportFormat = "csv" | "json";
 
+export interface ChatMessageDto {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt: string;
+}
+
+export interface ProjectRecommendation {
+  recommendedMonthlyUsd: number;
+  reasoning: string;
+  trailingAverageUsd: number;
+  trendPercent: number;
+}
+
 async function getJson<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`);
   if (!res.ok) throw new Error(`${path} failed: ${res.status}`);
@@ -141,25 +161,67 @@ export const api = {
   subscriptions: () => getJson<Subscription[]>("/api/subscriptions"),
   createSubscription: (input: SubscriptionInput) => postJson<Subscription>("/api/subscriptions", input),
   deleteSubscription: (id: string) => del(`/api/subscriptions/${id}`),
+  assistantMessages: () => getJson<ChatMessageDto[]>("/api/assistant/messages"),
+  sendAssistantMessage: (content: string) =>
+    postJson<ChatMessageDto>("/api/assistant/messages", { content }),
+  projectRecommendation: (projectId: string) =>
+    getJson<ProjectRecommendation>(`/api/projects/${projectId}/recommendation`),
 };
 
 interface SocketHandlers {
   onRefresh: () => void;
   onAlert?: (message: string) => void;
+  onConnectionChange?: (connected: boolean) => void;
 }
 
+const RECONNECT_MIN_DELAY_MS = 1_000;
+const RECONNECT_MAX_DELAY_MS = 30_000;
+
 export function connectRefreshSocket(handlers: SocketHandlers | (() => void)): () => void {
-  const { onRefresh, onAlert } = typeof handlers === "function" ? { onRefresh: handlers } : handlers;
+  const { onRefresh, onAlert, onConnectionChange } =
+    typeof handlers === "function" ? { onRefresh: handlers } : handlers;
   const wsUrl = API_BASE.replace(/^http/, "ws") + "/ws";
-  const socket = new WebSocket(wsUrl);
-  socket.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      if (data.type === "refresh") onRefresh();
-      if (data.type === "alert") onAlert?.(data.message);
-    } catch {
-      // ignore malformed messages
-    }
+
+  let socket: WebSocket | null = null;
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let reconnectDelay = RECONNECT_MIN_DELAY_MS;
+  let closedByCaller = false;
+
+  const connect = () => {
+    socket = new WebSocket(wsUrl);
+
+    socket.onopen = () => {
+      reconnectDelay = RECONNECT_MIN_DELAY_MS;
+      onConnectionChange?.(true);
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "refresh") onRefresh();
+        if (data.type === "alert") onAlert?.(data.message);
+      } catch {
+        // ignore malformed messages
+      }
+    };
+
+    socket.onclose = () => {
+      onConnectionChange?.(false);
+      if (closedByCaller) return;
+      reconnectTimer = setTimeout(connect, reconnectDelay);
+      reconnectDelay = Math.min(reconnectDelay * 2, RECONNECT_MAX_DELAY_MS);
+    };
+
+    // onclose always fires after onerror for a socket that failed to connect,
+    // so reconnection is scheduled there — no separate handling needed here.
+    socket.onerror = () => {};
   };
-  return () => socket.close();
+
+  connect();
+
+  return () => {
+    closedByCaller = true;
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    socket?.close();
+  };
 }

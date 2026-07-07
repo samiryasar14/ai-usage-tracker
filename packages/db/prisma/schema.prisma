@@ -26,6 +26,10 @@ model Model {
   outputPricePerMTok    Float
   cacheReadPricePerMTok Float
   cacheWritePricePerMTok Float
+  // True when this model wasn't found in the pricing table, so cost was
+  // recorded as 0 rather than a real (possibly wrong) number — surfaced in
+  // the dashboard so spend totals aren't silently under-reported.
+  pricingUnknown        Boolean  @default(false)
   requests              Request[]
 
   @@unique([providerId, name])
@@ -68,6 +72,10 @@ model Request {
   cacheReadTokens      Int
   cacheCreationTokens  Int
   cost                 Float
+  // True for subagent/Task-tool turns, as opposed to the user-facing conversation.
+  // Still counted in cost/token totals (it's real spend) — captured so future
+  // reporting can separately attribute or filter delegated-agent usage.
+  isSidechain          Boolean  @default(false)
 
   @@index([timestamp])
 }
@@ -118,4 +126,15 @@ model Subscription {
   notes          String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+}
+
+// Single global conversation with the in-app AI assistant (no multi-thread
+// support yet — intentional v1 scope cut). See packages/server/src/assistant.ts.
+model ChatMessage {
+  id        String   @id @default(cuid())
+  role      String   // "user" | "assistant"
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }

@@ -15,7 +15,7 @@ export async function getOverview() {
   const todayStart = startOfTodayUtc();
   const monthStart = startOfMonthUtc();
 
-  const [todayAgg, monthAgg, modelsUsed, providersConnected] = await Promise.all([
+  const [todayAgg, monthAgg, modelsUsed, providersConnected, unpricedModels] = await Promise.all([
     db.request.aggregate({
       where: { timestamp: { gte: todayStart } },
       _count: true,
@@ -34,6 +34,10 @@ export async function getOverview() {
     }),
     db.model.count(),
     db.provider.count(),
+    db.model.findMany({
+      where: { pricingUnknown: true },
+      select: { name: true, _count: { select: { requests: true } } },
+    }),
   ]);
 
   const sumTokens = (agg: {
@@ -54,6 +58,7 @@ export async function getOverview() {
     estimatedMonthlyCost: monthAgg._sum.cost ?? 0,
     modelsUsed,
     providersConnected,
+    unpricedModels: unpricedModels.map((m) => ({ name: m.name, requestCount: m._count.requests })),
   };
 }
 

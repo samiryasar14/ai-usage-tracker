@@ -18,7 +18,10 @@ export function ModelLeaderboard({ rows }: ModelLeaderboardProps) {
       </thead>
       <tbody>
         {rows.map((row) => (
-          <tr key={row.modelName} className="border-b border-hairline last:border-0">
+          <tr
+            key={row.modelName}
+            className="border-b border-hairline transition-colors last:border-0 hover:bg-hairline/10"
+          >
             <td className="py-2 text-text-primary">{row.modelName}</td>
             <td className="py-2 text-right tabular-nums text-text-primary">{formatCount(row.calls)}</td>
             <td className="py-2 text-right tabular-nums text-text-primary">{formatCompact(row.tokens)}</td>
@@ -27,7 +30,7 @@ export function ModelLeaderboard({ rows }: ModelLeaderboardProps) {
         ))}
         {rows.length === 0 && (
           <tr>
-            <td colSpan={4} className="py-4 text-center text-text-muted">
+            <td colSpan={4} className="py-6 text-center text-sm text-text-muted">
               No usage recorded yet.
             </td>
           </tr>

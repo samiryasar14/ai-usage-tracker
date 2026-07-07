@@ -39,17 +39,22 @@ export function BudgetPanel({ rule, events, onSave, saving }: BudgetPanelProps) 
             step={1}
             value={threshold}
             onChange={(e) => setThreshold(Number(e.target.value))}
-            className="w-32 rounded-md border border-hairline bg-transparent px-2 py-1 text-text-primary"
+            className="w-32 rounded-md border border-hairline bg-transparent px-2 py-1 text-text-primary transition-colors focus:border-series-1 focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
           />
         </label>
         <label className="flex items-center gap-2 pb-1.5 text-sm text-text-secondary">
-          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => setEnabled(e.target.checked)}
+            className="accent-series-1 transition-colors focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
+          />
           Enabled
         </label>
         <button
           type="submit"
           disabled={saving}
-          className="rounded-md bg-text-primary px-3 py-1.5 text-sm font-medium text-surface disabled:opacity-50"
+          className="rounded-md bg-text-primary px-3 py-1.5 text-sm font-medium text-surface transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50"
         >
           {saving ? "Saving…" : "Save"}
         </button>
@@ -67,7 +72,11 @@ export function BudgetPanel({ rule, events, onSave, saving }: BudgetPanelProps) 
             {event.message}
           </li>
         ))}
-        {events.length === 0 && <li className="text-sm text-text-muted">No budget alerts triggered yet.</li>}
+        {events.length === 0 && (
+          <li className="rounded-md border border-dashed border-hairline px-3 py-4 text-center text-sm text-text-muted">
+            No budget alerts triggered yet.
+          </li>
+        )}
       </ul>
     </div>
   );

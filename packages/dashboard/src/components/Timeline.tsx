@@ -57,5 +57,13 @@ export function Timeline({ data }: TimelineProps) {
     ],
   };
 
+  if (data.length === 0) {
+    return (
+      <div className="flex h-[280px] items-center justify-center rounded-md border border-dashed border-hairline text-sm text-text-muted">
+        No usage data yet.
+      </div>
+    );
+  }
+
   return <ReactECharts option={option} style={{ height: 280 }} notMerge />;
 }

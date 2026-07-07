@@ -14,6 +14,8 @@ export interface NormalizedUsageRecord {
   outputTokens: number;
   cacheReadTokens: number;
   cacheCreationTokens: number;
+  /** True for subagent/Task-tool turns, as opposed to the user-facing conversation. */
+  isSidechain: boolean;
 }
 
 export interface ProviderPlugin {
