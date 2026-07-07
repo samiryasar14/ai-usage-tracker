@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Provider {
+  id       String   @id @default(cuid())
+  name     String   @unique
+  type     String
+  status   String   @default("connected")
+  models   Model[]
+  sessions Session[]
+}
+
+model Model {
+  id                    String   @id @default(cuid())
+  providerId            String
+  provider              Provider @relation(fields: [providerId], references: [id])
+  name                  String
+  contextWindow         Int
+  inputPricePerMTok     Float
+  outputPricePerMTok    Float
+  cacheReadPricePerMTok Float
+  cacheWritePricePerMTok Float
+  requests              Request[]
+
+  @@unique([providerId, name])
+}
+
+model Project {
+  id          String    @id @default(cuid())
+  path        String    @unique
+  name        String
+  firstSeenAt DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
+  sessions    Session[]
+}
+
+model Session {
+  id         String    @id @default(cuid())
+  externalId String
+  providerId String
+  provider   Provider  @relation(fields: [providerId], references: [id])
+  projectId  String
+  project    Project   @relation(fields: [projectId], references: [id])
+  entrypoint String?
+  startTime  DateTime
+  endTime    DateTime
+  requests   Request[]
+
+  @@unique([providerId, externalId])
+}
+
+model Request {
+  id                  String   @id @default(cuid())
+  externalId          String   @unique
+  sessionId           String
+  session             Session  @relation(fields: [sessionId], references: [id])
+  modelId             String
+  model               Model    @relation(fields: [modelId], references: [id])
+  timestamp           DateTime
+  inputTokens          Int
+  outputTokens         Int
+  cacheReadTokens      Int
+  cacheCreationTokens  Int
+  cost                 Float
+
+  @@index([timestamp])
+}
+
+// Tracks how far into each append-only log file we've read, so ingestion
+// can tail new lines instead of re-parsing the whole file every cycle.
+model IngestCursor {
+  filePath   String   @id
+  byteOffset Int
+  updatedAt  DateTime @updatedAt
+}
+
+model AlertRule {
+  id           String       @id @default(cuid())
+  type         String       // "monthly_budget" for now; extensible later
+  thresholdUsd Float
+  enabled      Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  events       AlertEvent[]
+}
+
+model AlertEvent {
+  id             String    @id @default(cuid())
+  rule           AlertRule @relation(fields: [ruleId], references: [id])
+  ruleId         String
+  // Dedup key for the period the alert covers, e.g. "2026-07" for a monthly
+  // budget rule — ensures at most one alert per rule per month.
+  periodKey      String
+  triggeredAt    DateTime  @default(now())
+  message        String
+  acknowledgedAt DateTime?
+
+  @@unique([ruleId, periodKey])
+}
+
+// Manually-tracked recurring subscriptions (ChatGPT Plus, Cursor Pro, GitHub
+// Copilot, ...). These are fixed-cost plans, not usage events, so there's no
+// provider plugin that can discover them automatically — the user enters them.
+model Subscription {
+  id             String    @id @default(cuid())
+  name           String
+  monthlyCostUsd Float
+  // Day of month the plan renews, 1-31 (clamped to the month's actual length
+  // when computing the next renewal date, e.g. day 31 in a 30-day month).
+  renewalDay     Int
+  status         String    @default("active") // "active" | "cancelled"
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}

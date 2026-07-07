@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist-electron/
+build/
+.env
+.env.local
+*.log
+.turbo/
+packages/db/prisma/dev.db
+packages/db/prisma/dev.db-journal
+packages/db/generated/
+.DS_Store

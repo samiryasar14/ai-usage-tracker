@@ -1,0 +1,13 @@
+{
+  "name": "@ai-usage-tracker/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/main.cjs",
+  "scripts": {
+    "dev": "electron .",
+    "typecheck": "echo \"(desktop main process is plain JS — nothing to typecheck)\""
+  },
+  "devDependencies": {
+    "electron": "^33.2.1"
+  }
+}
