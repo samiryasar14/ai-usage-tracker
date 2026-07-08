@@ -138,3 +138,14 @@ model ChatMessage {
 
   @@index([createdAt])
 }
+
+// A mobile device paired to this desktop over the local network. Only the
+// SHA-256 hash of its access token is stored (never the raw token) — see
+// packages/server/src/pairing.ts.
+model PairedDevice {
+  id         String   @id @default(cuid())
+  name       String
+  tokenHash  String   @unique
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+}

@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "AI Usage Hub",
+    "slug": "ai-usage-hub-mobile",
+    "scheme": "ai-usage-hub-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.samiryasar.aiusagehub.mobile",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        },
+        "NSLocalNetworkUsageDescription": "AI Usage Hub connects to your desktop app over your local WiFi network to show your usage data.",
+        "NSCameraUsageDescription": "AI Usage Hub uses the camera to scan the pairing QR code shown by the desktop app."
+      }
+    },
+    "android": {
+      "package": "com.samiryasar.aiusagehub.mobile",
+      "usesCleartextTraffic": true,
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "AI Usage Hub uses the camera to scan the pairing QR code shown by the desktop app."
+        }
+      ],
+      "expo-secure-store"
+    ]
+  }
+}

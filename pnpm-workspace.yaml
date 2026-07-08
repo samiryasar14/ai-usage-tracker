@@ -1,3 +1,8 @@
 packages:
   - "packages/*"
   - "packages/plugins/*"
+  # Expo/React Native's Metro bundler doesn't play well with pnpm's default
+  # symlinked node_modules — this package manages its own deps via npm
+  # instead of joining the pnpm workspace, a common pattern for Expo apps
+  # living alongside a pnpm monorepo.
+  - "!packages/mobile"

@@ -17,6 +17,7 @@ import { getReportRows, toCsv, type ReportPeriod } from "./reports.js";
 import { getMonthlyCostForecast } from "./forecast.js";
 import { listAssistantMessages, answerAssistantQuestion } from "./assistant.js";
 import { getRecommendedProjectLimit } from "./recommendations.js";
+import { startPairing, claimPairing, verifyToken, listPairedDevices, revokeDevice } from "./pairing.js";
 
 const PORT = Number(process.env.PORT ?? 4317);
 const INGEST_INTERVAL_MS = 10_000;
@@ -35,6 +36,26 @@ if (process.env.RUN_APP_MIGRATIONS === "1") {
 const app = Fastify({ logger: true });
 await app.register(cors, { origin: true });
 await app.register(websocket);
+
+// Historically this server only ever bound to 127.0.0.1, so every request
+// was implicitly trusted — it's now also LAN-reachable (for the mobile app),
+// so requests from anywhere else must present a token from a paired device.
+// The pairing-claim route is deliberately exempt: the short-lived pairing
+// code IS the secret that gates it, not a bearer token (chicken-and-egg).
+const LOOPBACK_IPS = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
+const UNAUTHENTICATED_PATHS = new Set(["/api/pairing/claim"]);
+
+app.addHook("onRequest", async (req, reply) => {
+  if (LOOPBACK_IPS.has(req.ip) || UNAUTHENTICATED_PATHS.has(req.url.split("?")[0])) {
+    return;
+  }
+  const header = req.headers.authorization;
+  const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length) : null;
+  const device = token ? await verifyToken(token) : null;
+  if (!device) {
+    reply.code(401).send({ error: "unauthorized" });
+  }
+});
 
 const sockets = new Set<import("ws").WebSocket>();
 
@@ -125,6 +146,26 @@ app.get<{ Params: { id: string } }>("/api/projects/:id/recommendation", async (r
   return getRecommendedProjectLimit(req.params.id);
 });
 
+app.post("/api/pairing/start", async () => startPairing(PORT));
+
+app.post<{ Body: { code: string; deviceName: string } }>("/api/pairing/claim", async (req, reply) => {
+  try {
+    const result = await claimPairing(req.body.code, req.body.deviceName);
+    reply.code(201);
+    return result;
+  } catch (err) {
+    reply.code(400);
+    return { error: err instanceof Error ? err.message : "Pairing failed" };
+  }
+});
+
+app.get("/api/pairing/devices", async () => listPairedDevices());
+
+app.delete<{ Params: { id: string } }>("/api/pairing/devices/:id", async (req, reply) => {
+  await revokeDevice(req.params.id);
+  reply.code(204);
+});
+
 const VALID_PERIODS: ReportPeriod[] = ["day", "week", "month"];
 
 app.get<{ Querystring: { period?: string; format?: string } }>("/api/reports/export", async (req, reply) => {
@@ -173,5 +214,5 @@ try {
   app.log.warn(err, "could not watch Claude Code projects directory; relying on polling only");
 }
 
-await app.listen({ port: PORT, host: "127.0.0.1" });
-app.log.info(`AI Usage Hub server listening on http://127.0.0.1:${PORT}`);
+await app.listen({ port: PORT, host: "0.0.0.0" });
+app.log.info(`AI Usage Hub server listening on http://127.0.0.1:${PORT} (and the LAN, for paired mobile devices)`);

@@ -112,6 +112,20 @@ export interface ProjectRecommendation {
   trendPercent: number;
 }
 
+export interface PairingSession {
+  code: string;
+  expiresAt: number;
+  host: string | null;
+  port: number;
+}
+
+export interface PairedDevice {
+  id: string;
+  name: string;
+  createdAt: string;
+  lastSeenAt: string;
+}
+
 async function getJson<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`);
   if (!res.ok) throw new Error(`${path} failed: ${res.status}`);
@@ -166,6 +180,9 @@ export const api = {
     postJson<ChatMessageDto>("/api/assistant/messages", { content }),
   projectRecommendation: (projectId: string) =>
     getJson<ProjectRecommendation>(`/api/projects/${projectId}/recommendation`),
+  startPairing: () => postJson<PairingSession>("/api/pairing/start", {}),
+  pairedDevices: () => getJson<PairedDevice[]>("/api/pairing/devices"),
+  revokeDevice: (id: string) => del(`/api/pairing/devices/${id}`),
 };
 
 interface SocketHandlers {
