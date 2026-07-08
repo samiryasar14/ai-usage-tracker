@@ -41,7 +41,7 @@ const FEATURES: Feature[] = [
   {
     icon: Github,
     title: "Open source",
-    description: "The full source is public on GitHub — inspect it, self-host it, or send a pull request.",
+    description: "MIT licensed and public on GitHub — inspect it, self-host it, or send a pull request.",
   },
 ];
 

@@ -23,7 +23,7 @@ export function Footer() {
           View source on GitHub
         </a>
 
-        <p className="text-xs text-text-muted">© {year} AI Usage Hub. Local-first, always.</p>
+        <p className="text-xs text-text-muted">© {year} AI Usage Hub. MIT licensed. Local-first, always.</p>
       </div>
     </footer>
   );

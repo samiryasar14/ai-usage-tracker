@@ -2,6 +2,7 @@
   "name": "@ai-usage-tracker/desktop",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "main": "src/main.cjs",
   "scripts": {
     "dev": "electron .",
@@ -35,6 +36,12 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
     },
+    "protocols": [
+      {
+        "name": "AI Usage Hub",
+        "schemes": ["ai-usage-hub"]
+      }
+    ],
     "publish": {
       "provider": "github",
       "owner": "samiryasar14",

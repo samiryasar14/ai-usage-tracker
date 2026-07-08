@@ -1,18 +1,63 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LayoutDashboard, FolderKanban, Sparkles, Moon, Sun } from "lucide-react";
+import type { Session } from "@supabase/supabase-js";
+import { LayoutDashboard, FolderKanban, Sparkles, Settings, Moon, Sun } from "lucide-react";
 import { api, connectRefreshSocket } from "./api";
+import { supabase } from "./supabaseClient";
 import { DashboardView } from "./views/DashboardView";
 import { ProjectsView } from "./views/ProjectsView";
 import { AssistantView } from "./views/AssistantView";
+import { SettingsView } from "./views/SettingsView";
+import { LoginGate } from "./components/LoginGate";
 
-type Tab = "dashboard" | "projects" | "assistant";
+type Tab = "dashboard" | "projects" | "assistant" | "settings";
 
 const TABS: Array<{ key: Tab; label: string; icon: typeof LayoutDashboard }> = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "projects", label: "Projects", icon: FolderKanban },
   { key: "assistant", label: "AI Assistant", icon: Sparkles },
+  { key: "settings", label: "Settings", icon: Settings },
 ];
+
+const isElectron = window.electronAPI?.isElectron === true;
+
+// `undefined` = session not checked yet, `null` = checked and confirmed signed out.
+function useElectronSession() {
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (!isElectron) return;
+
+    // No Supabase project configured yet — there's nothing to check, so treat
+    // this the same as "confirmed signed out" so LoginGate can show its
+    // "not configured" message instead of hanging on a loading state forever.
+    if (!supabase) {
+      setSession(null);
+      return;
+    }
+
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  // Completes the login: the main process forwards the tokens it parsed out
+  // of the ai-usage-hub://auth-callback deep link here, and setting the
+  // session triggers the onAuthStateChange handler above.
+  useEffect(() => {
+    if (!isElectron) return;
+    const unsubscribe = window.electronAPI?.onAuthCallback(({ accessToken, refreshToken }) => {
+      supabase?.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+    });
+    return () => unsubscribe?.();
+  }, []);
+
+  return session;
+}
 
 function useDarkMode() {
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
@@ -35,6 +80,7 @@ export function App() {
   const [toast, setToast] = useState<string | null>(null);
   const [socketConnected, setSocketConnected] = useState(true);
   const { dark, toggle: toggleDark } = useDarkMode();
+  const session = useElectronSession();
 
   useEffect(() => {
     return connectRefreshSocket({
@@ -53,6 +99,16 @@ export function App() {
   // inside DashboardView, so this doesn't cause an extra request.
   const overview = useQuery({ queryKey: ["overview"], queryFn: api.overview, refetchInterval: 15_000 });
   const unpricedModels = overview.data?.unpricedModels ?? [];
+
+  if (isElectron && session === undefined) {
+    // Session not checked yet — avoid a flash of the login gate while we ask
+    // Supabase whether a persisted session already exists.
+    return <div className="min-h-screen bg-plane" />;
+  }
+
+  if (isElectron && !session) {
+    return <LoginGate />;
+  }
 
   return (
     <div className="min-h-screen bg-plane">
@@ -126,6 +182,7 @@ export function App() {
         {tab === "dashboard" && <DashboardView />}
         {tab === "projects" && <ProjectsView />}
         {tab === "assistant" && <AssistantView />}
+        {tab === "settings" && <SettingsView />}
       </div>
     </div>
   );
