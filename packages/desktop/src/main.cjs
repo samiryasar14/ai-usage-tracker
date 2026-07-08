@@ -2,7 +2,7 @@
 // elsewhere in the monorepo) since it's a thin bootstrap shell: spawn the
 // Fastify server as a child process, wait for it to accept connections, then
 // point a BrowserWindow at the dashboard.
-const { app, BrowserWindow, Menu, dialog, shell, ipcMain } = require("electron");
+const { app, BrowserWindow, Menu, dialog, shell } = require("electron");
 const { spawn } = require("node:child_process");
 const path = require("node:path");
 const net = require("node:net");
@@ -10,68 +10,8 @@ const fs = require("node:fs");
 
 const SERVER_PORT = 4317;
 const DASHBOARD_DEV_URL = "http://localhost:5173";
-const PROTOCOL_SCHEME = "ai-usage-hub";
 
 let serverProcess;
-// The main window, once created — used to deliver auth tokens as soon as
-// they're parsed, or to flush buffered tokens once the page finishes loading.
-let mainWindow;
-// Tokens parsed from a protocol callback that arrived before the window
-// existed or before it finished loading. Flushed on the next did-finish-load.
-let pendingAuthTokens = null;
-
-// Parse tokens out of an `ai-usage-hub://auth-callback?access_token=...&refresh_token=...`
-// URL (handed to us either via the `open-url` event on macOS, a
-// `second-instance` launch argument, or process.argv on a cold Windows
-// launch) and deliver them to the renderer. If the window isn't up yet, or
-// is still loading, buffer the tokens instead of dropping them.
-function handleAuthCallbackUrl(urlString) {
-  let parsed;
-  try {
-    parsed = new URL(urlString);
-  } catch (err) {
-    console.error("Ignoring malformed auth callback URL:", urlString, err);
-    return;
-  }
-
-  const accessToken = parsed.searchParams.get("access_token");
-  const refreshToken = parsed.searchParams.get("refresh_token");
-  if (!accessToken && !refreshToken) return;
-
-  const tokens = { accessToken, refreshToken };
-
-  if (mainWindow && !mainWindow.webContents.isLoading()) {
-    mainWindow.webContents.send("auth-callback", tokens);
-  } else {
-    pendingAuthTokens = tokens;
-  }
-}
-
-// Single-instance lock: a protocol launch while the app is already running
-// re-triggers this app with the URL as a launch argument. Without the lock,
-// that would spawn a second, fully separate instance of the app instead of
-// handing the URL to the one already open.
-const gotLock = app.requestSingleInstanceLock();
-if (!gotLock) {
-  app.quit();
-} else {
-  app.on("second-instance", (event, argv) => {
-    const win = BrowserWindow.getAllWindows()[0];
-    if (win) {
-      if (win.isMinimized()) win.restore();
-      win.focus();
-    }
-    const url = argv.find((arg) => arg.startsWith(`${PROTOCOL_SCHEME}://`));
-    if (url) handleAuthCallbackUrl(url);
-  });
-
-  app.setAsDefaultProtocolClient(PROTOCOL_SCHEME);
-
-  // macOS delivers protocol launches via this event rather than argv.
-  app.on("open-url", (event, url) => {
-    event.preventDefault();
-    handleAuthCallbackUrl(url);
-  });
 
 function waitForPort(port, host, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
@@ -146,11 +86,6 @@ function startServer() {
   else startServerDev();
 }
 
-// Backs preload.cjs's `electronAPI.openExternal` — lets the renderer open a
-// link (e.g. "sign in with browser") in the OS default browser without
-// giving it raw shell access.
-ipcMain.handle("open-external", (event, url) => shell.openExternal(url));
-
 async function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
@@ -159,14 +94,6 @@ async function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
     },
-  });
-  mainWindow = win;
-
-  win.webContents.on("did-finish-load", () => {
-    if (pendingAuthTokens) {
-      win.webContents.send("auth-callback", pendingAuthTokens);
-      pendingAuthTokens = null;
-    }
   });
 
   if (!app.isPackaged) {
@@ -229,12 +156,6 @@ app.whenReady().then(async () => {
   }
   await createWindow();
 
-  // Windows/Linux: a cold launch via the protocol arrives as a command-line
-  // argument (not an event) — pick it up now that the window exists. (On
-  // macOS this is instead delivered via the `open-url` event above.)
-  const launchUrl = process.argv.find((arg) => arg.startsWith(`${PROTOCOL_SCHEME}://`));
-  if (launchUrl) handleAuthCallbackUrl(launchUrl);
-
   if (app.isPackaged) {
     // No published release exists yet at samiryasar14/ai-usage-tracker, so
     // this will just log a "no releases found" error until one is cut.
@@ -261,4 +182,3 @@ app.on("window-all-closed", () => {
 app.on("before-quit", () => {
   if (serverProcess) serverProcess.kill();
 });
-}

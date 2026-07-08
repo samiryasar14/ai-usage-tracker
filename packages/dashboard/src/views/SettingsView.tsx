@@ -4,7 +4,8 @@ import { Smartphone, UserCircle } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import type { ComponentType, ReactNode } from "react";
 import { api, type PairingSession } from "../api";
-import { supabase, supabaseConfigured } from "../supabaseClient";
+
+const PROFILE_NAME_KEY = "profileName";
 
 interface SectionHeadingProps {
   icon: ComponentType<{ size?: string | number; className?: string }>;
@@ -21,27 +22,15 @@ function SectionHeading({ icon: Icon, children }: SectionHeadingProps) {
 }
 
 export function SettingsView() {
-  const [loggingOut, setLoggingOut] = useState(false);
+  const [profileName, setProfileName] = useState(() => localStorage.getItem(PROFILE_NAME_KEY) ?? "");
+  const [nameDraft, setNameDraft] = useState(profileName);
+  const [editingName, setEditingName] = useState(profileName === "");
 
-  const user = useQuery({
-    queryKey: ["currentUser"],
-    queryFn: async () => {
-      if (!supabase) return null;
-      const { data, error } = await supabase.auth.getUser();
-      if (error) throw error;
-      return data.user;
-    },
-    enabled: supabaseConfigured,
-  });
-
-  async function handleLogout() {
-    if (!supabase) return;
-    setLoggingOut(true);
-    try {
-      await supabase.auth.signOut();
-    } finally {
-      setLoggingOut(false);
-    }
+  function saveName() {
+    const trimmed = nameDraft.trim();
+    localStorage.setItem(PROFILE_NAME_KEY, trimmed);
+    setProfileName(trimmed);
+    setEditingName(false);
   }
 
   const queryClient = useQueryClient();
@@ -96,27 +85,53 @@ export function SettingsView() {
   return (
     <div>
       <section className="rounded-lg border border-hairline bg-surface p-5">
-        <SectionHeading icon={UserCircle}>Account</SectionHeading>
+        <SectionHeading icon={UserCircle}>Your name</SectionHeading>
         <div className="mt-3">
-          {!supabaseConfigured ? (
-            <p className="text-sm text-text-muted">Sign-in isn&apos;t configured yet.</p>
-          ) : user.isLoading ? (
-            <p className="text-sm text-text-muted">Loading account…</p>
-          ) : user.isError ? (
-            <p className="text-sm text-red-600">Couldn&apos;t load account details.</p>
-          ) : (
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="text-sm text-text-secondary">Signed in as</div>
-                <div className="mt-0.5 text-base font-medium text-text-primary">{user.data?.email ?? "Unknown"}</div>
-              </div>
+          {editingName ? (
+            <form
+              className="flex flex-wrap items-center gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                saveName();
+              }}
+            >
+              <input
+                type="text"
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                placeholder="What should we call you?"
+                autoFocus
+                className="w-64 rounded-md border border-hairline bg-transparent px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
+              />
               <button
-                type="button"
-                onClick={handleLogout}
-                disabled={loggingOut}
+                type="submit"
+                disabled={!nameDraft.trim()}
                 className="rounded-md bg-text-primary px-3 py-1.5 text-sm font-medium text-surface transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50"
               >
-                {loggingOut ? "Logging out…" : "Log out"}
+                Save
+              </button>
+              {profileName && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNameDraft(profileName);
+                    setEditingName(false);
+                  }}
+                  className="text-sm text-text-muted hover:text-text-primary"
+                >
+                  Cancel
+                </button>
+              )}
+            </form>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="text-base font-medium text-text-primary">{profileName}</div>
+              <button
+                type="button"
+                onClick={() => setEditingName(true)}
+                className="rounded-md bg-text-primary px-3 py-1.5 text-sm font-medium text-surface transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
+              >
+                Edit
               </button>
             </div>
           )}
