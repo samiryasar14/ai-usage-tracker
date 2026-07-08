@@ -1,5 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, CreditCard, FileDown, History, Trophy, TrendingUp } from "lucide-react";
+import {
+  Bell,
+  CircleDollarSign,
+  CreditCard,
+  Database,
+  FileDown,
+  History,
+  Layers,
+  Trophy,
+  TrendingUp,
+  Zap,
+} from "lucide-react";
 import type { ComponentType, ReactNode } from "react";
 import { api } from "../api";
 import { StatCard } from "../components/StatCard";
@@ -61,24 +72,29 @@ export function DashboardView() {
         <StatCard
           label="Today's requests"
           value={overview.isLoading ? "…" : overview.data ? formatCount(overview.data.todayRequests) : "—"}
+          icon={Zap}
         />
         <StatCard
           label="Today's tokens"
           value={overview.isLoading ? "…" : overview.data ? formatCompact(overview.data.todayTokens) : "—"}
+          icon={Database}
         />
         <StatCard
           label="Monthly tokens"
           value={overview.isLoading ? "…" : overview.data ? formatCompact(overview.data.monthlyTokens) : "—"}
+          icon={Layers}
         />
         <StatCard
           label="Estimated monthly cost"
           value={
             overview.isLoading ? "…" : overview.data ? formatCurrency(overview.data.estimatedMonthlyCost) : "—"
           }
+          icon={CircleDollarSign}
         />
         <StatCard
           label="Projected month-end cost"
           value={forecast.isLoading ? "…" : forecast.data ? formatCurrency(forecast.data.projectedMonthlyCost) : "—"}
+          icon={TrendingUp}
         />
       </div>
 

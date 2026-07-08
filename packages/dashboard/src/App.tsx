@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LayoutDashboard, FolderKanban, Sparkles, Settings, Moon, Sun } from "lucide-react";
 import { api, connectRefreshSocket } from "./api";
+import { Logo } from "./components/Logo";
 import { DashboardView } from "./views/DashboardView";
 import { ProjectsView } from "./views/ProjectsView";
 import { AssistantView } from "./views/AssistantView";
@@ -61,7 +62,10 @@ export function App() {
       <header className="border-b border-hairline bg-surface">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <div className="flex items-center gap-6">
-            <span className="text-sm font-semibold text-text-primary">AI Usage Hub</span>
+            <div className="flex items-center gap-2">
+              <Logo size={22} />
+              <span className="text-sm font-semibold text-text-primary">AI Usage Hub</span>
+            </div>
             <nav className="flex items-center gap-1">
               {TABS.map(({ key, label, icon: Icon }) => (
                 <button

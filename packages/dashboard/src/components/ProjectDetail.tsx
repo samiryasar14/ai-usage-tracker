@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { TrendingDown, TrendingUp, X } from "lucide-react";
+import { CircleDollarSign, Database, MessageSquare, TrendingDown, TrendingUp, X, Zap } from "lucide-react";
 import { api } from "../api";
 import type { ProjectAnalyticsRow, SessionHistoryRow } from "../api";
 import { formatCompact, formatCount, formatCurrency } from "../format";
@@ -40,10 +40,10 @@ export function ProjectDetail({ project, sessions, onClose }: ProjectDetailProps
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Sessions" value={formatCount(project.sessions)} />
-        <StatCard label="Requests" value={formatCount(project.requests)} />
-        <StatCard label="Tokens" value={formatCompact(project.tokens)} />
-        <StatCard label="Cost" value={formatCurrency(project.cost)} />
+        <StatCard label="Sessions" value={formatCount(project.sessions)} icon={MessageSquare} />
+        <StatCard label="Requests" value={formatCount(project.requests)} icon={Zap} />
+        <StatCard label="Tokens" value={formatCompact(project.tokens)} icon={Database} />
+        <StatCard label="Cost" value={formatCurrency(project.cost)} icon={CircleDollarSign} />
       </div>
 
       <div className="mt-6 rounded-lg border border-hairline p-4">

@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Smartphone, UserCircle } from "lucide-react";
+import { DatabaseBackup, FolderOpen, Smartphone, UserCircle } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import type { ComponentType, ReactNode } from "react";
 import { api, type PairingSession } from "../api";
+
+const isElectron = window.electronAPI?.isElectron === true;
 
 const PROFILE_NAME_KEY = "profileName";
 
@@ -34,6 +36,13 @@ export function SettingsView() {
   }
 
   const queryClient = useQueryClient();
+
+  const [backupMessage, setBackupMessage] = useState<string | null>(null);
+
+  const backupDatabase = useMutation({
+    mutationFn: () => window.electronAPI!.backupDatabase(),
+    onSuccess: (result) => setBackupMessage(result.ok ? "Backup saved." : result.error),
+  });
 
   const [pairingSession, setPairingSession] = useState<PairingSession | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -199,6 +208,35 @@ export function SettingsView() {
           </ul>
         </div>
       </section>
+
+      {isElectron && (
+        <section className="mt-8 rounded-lg border border-hairline bg-surface p-5">
+          <SectionHeading icon={DatabaseBackup}>App Data</SectionHeading>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setBackupMessage(null);
+                backupDatabase.mutate();
+              }}
+              disabled={backupDatabase.isPending}
+              className="flex items-center gap-1.5 rounded-md bg-text-primary px-3 py-1.5 text-sm font-medium text-surface transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50"
+            >
+              <DatabaseBackup size={15} />
+              {backupDatabase.isPending ? "Saving…" : "Backup Database"}
+            </button>
+            <button
+              type="button"
+              onClick={() => window.electronAPI!.openDataFolder()}
+              className="flex items-center gap-1.5 rounded-md border border-hairline px-3 py-1.5 text-sm font-medium text-text-primary transition-colors hover:bg-plane focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
+            >
+              <FolderOpen size={15} />
+              Open Data Folder
+            </button>
+            {backupMessage && <span className="text-sm text-text-muted">{backupMessage}</span>}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
