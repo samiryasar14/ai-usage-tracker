@@ -39,7 +39,7 @@
     "publish": {
       "provider": "github",
       "owner": "samiryasar14",
-      "repo": "ai-usage-tracker"
+      "repo": "soar-ai-tracker"
     }
   }
 }

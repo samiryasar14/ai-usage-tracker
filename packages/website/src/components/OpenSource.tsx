@@ -39,7 +39,7 @@ export function OpenSource() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("https://api.github.com/repos/samiryasar14/ai-usage-tracker")
+    fetch("https://api.github.com/repos/samiryasar14/soar-ai-tracker")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (cancelled || !data) return;

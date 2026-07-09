@@ -19,7 +19,7 @@ Goal: a real installable desktop app, not a dev-mode-only tool.
 
 - **Bundle the server** — replace `desktop/src/main.cjs` spawning `tsx src/index.ts` at runtime with a compiled/bundled server (esbuild → single JS file) shipped alongside the app. Runtime `tsx` + raw TS source is not viable for a packaged installer.
 - **electron-builder setup** — add build config (NSIS installer for Windows to match this dev machine, plus DMG/AppImage targets) at the root or `packages/desktop`. Wire `pnpm build:desktop` → installer output.
-- **Auto-update** — `electron-updater` pointed at GitHub Releases (repo already exists at `samiryasar14/ai-usage-tracker`) so future versions push without manual reinstalls.
+- **Auto-update** — `electron-updater` pointed at GitHub Releases (repo already exists at `samiryasar14/soar-ai-tracker`) so future versions push without manual reinstalls.
 - **App icon & installer branding** — currently none; needed for a credible installer.
 - **Code signing** — flag only: Windows/macOS signing needs certificates/Apple dev account the user will need to obtain; unsigned builds will trigger SmartScreen/Gatekeeper warnings. Note this as a known limitation until certs are available, not a blocker to shipping.
 - **Data location & backup** — SQLite DB path should live in Electron's `userData` dir (confirm `DATABASE_URL` resolves there, not the repo checkout); add a simple export/import of the DB file for backup before upgrades.

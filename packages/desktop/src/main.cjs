@@ -237,8 +237,8 @@ app.whenReady().then(async () => {
   await createWindow();
 
   if (app.isPackaged) {
-    // No published release exists yet at samiryasar14/ai-usage-tracker, so
-    // this will just log a "no releases found" error until one is cut.
+    // Checks releases at samiryasar14/soar-ai-tracker (see the "publish"
+    // config in package.json) for a newer version than this build's.
     try {
       const { autoUpdater } = require("electron-updater");
       autoUpdater.on("update-available", (info) => {
