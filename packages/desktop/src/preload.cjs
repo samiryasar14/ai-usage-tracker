@@ -10,4 +10,5 @@ contextBridge.exposeInMainWorld("electronAPI", {
   saveOpenAIKey: (key) => ipcRenderer.invoke("save-openai-key", key),
   hasOpenAIKey: () => ipcRenderer.invoke("has-openai-key"),
   clearOpenAIKey: () => ipcRenderer.invoke("clear-openai-key"),
+  showNotification: (title, body) => ipcRenderer.invoke("show-notification", title, body),
 });

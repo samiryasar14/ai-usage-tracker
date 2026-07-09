@@ -77,6 +77,13 @@ export interface MonthlyCostForecast {
   totalDays: number;
 }
 
+export interface ActivityEvent {
+  id: string;
+  type: string;
+  message: string;
+  createdAt: string;
+}
+
 /** Thrown when a request gets a 401 — the caller's screen should route back to pairing. */
 export class UnauthorizedError extends Error {
   constructor() {
@@ -147,6 +154,7 @@ export const api = {
   forecast: () => request<MonthlyCostForecast>("/api/forecast"),
   projectRecommendation: (projectId: string) =>
     request<ProjectRecommendation>(`/api/projects/${projectId}/recommendation`),
+  activity: (limit = 50) => request<ActivityEvent[]>(`/api/activity?limit=${limit}`),
   assistantMessages: () => request<ChatMessageDto[]>("/api/assistant/messages"),
   sendAssistantMessage: (content: string) =>
     request<ChatMessageDto>("/api/assistant/messages", { method: "POST", body: JSON.stringify({ content }) }),

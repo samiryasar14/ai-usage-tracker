@@ -4,6 +4,7 @@ import { LayoutDashboard, FolderKanban, History, Sparkles, Settings, Moon, Sun }
 import { api, connectRefreshSocket } from "./api";
 import { Logo } from "./components/Logo";
 import { NewsPanel } from "./components/NewsPanel";
+import { ResizablePanel } from "./components/ResizablePanel";
 import { DashboardView } from "./views/DashboardView";
 import { ProjectsView } from "./views/ProjectsView";
 import { ActivityView } from "./views/ActivityView";
@@ -48,6 +49,7 @@ export function App() {
       onAlert: (message) => {
         setToast(message);
         queryClient.invalidateQueries({ queryKey: ["alertEvents"] });
+        void window.electronAPI?.showNotification?.("Soar AI Tracker", message);
       },
       onConnectionChange: setSocketConnected,
     });
@@ -64,40 +66,42 @@ export function App() {
     <div className="flex h-screen bg-plane">
       {/* Icon-only left sidebar — replaces the old top nav bar. Native `title`
           attributes give hover tooltips without a new dependency. */}
-      <aside className="flex w-16 shrink-0 flex-col items-center border-r border-hairline bg-surface py-4">
-        <div title="Soar AI Tracker">
-          <Logo size={28} />
-        </div>
+      <ResizablePanel side="left" storageKey="sidebar-width" defaultWidth={64} minWidth={56} maxWidth={112}>
+        <aside className="flex h-full flex-col items-center border-r border-hairline bg-surface py-4">
+          <div title="Soar AI Tracker">
+            <Logo size={28} />
+          </div>
 
-        <nav className="mt-8 flex flex-col items-center gap-1">
-          {TABS.map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setTab(key)}
-              title={label}
-              aria-label={label}
-              className={`flex h-10 w-10 items-center justify-center rounded-md transition-colors ${
-                tab === key
-                  ? "bg-text-primary/[0.06] text-series-1"
-                  : "text-text-secondary hover:bg-text-primary/[0.04] hover:text-text-primary"
-              }`}
-            >
-              <Icon size={19} />
-            </button>
-          ))}
-        </nav>
+          <nav className="mt-8 flex flex-col items-center gap-1">
+            {TABS.map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                title={label}
+                aria-label={label}
+                className={`flex h-10 w-10 items-center justify-center rounded-md transition-colors ${
+                  tab === key
+                    ? "bg-text-primary/[0.06] text-series-1"
+                    : "text-text-secondary hover:bg-text-primary/[0.04] hover:text-text-primary"
+                }`}
+              >
+                <Icon size={19} />
+              </button>
+            ))}
+          </nav>
 
-        <button
-          type="button"
-          onClick={toggleDark}
-          title="Toggle dark mode"
-          aria-label="Toggle dark mode"
-          className="mt-auto flex h-10 w-10 items-center justify-center rounded-md text-text-secondary hover:bg-text-primary/[0.04] hover:text-text-primary"
-        >
-          {dark ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-      </aside>
+          <button
+            type="button"
+            onClick={toggleDark}
+            title="Toggle dark mode"
+            aria-label="Toggle dark mode"
+            className="mt-auto flex h-10 w-10 items-center justify-center rounded-md text-text-secondary hover:bg-text-primary/[0.04] hover:text-text-primary"
+          >
+            {dark ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+        </aside>
+      </ResizablePanel>
 
       {/* Center: scrollable main content, independent of the sidebar/news panel. */}
       <div className="flex-1 overflow-y-auto">
@@ -145,9 +149,18 @@ export function App() {
 
       {/* Right: AI news panel — scrolls independently, hidden below `lg` since
           three columns plus content needs real screen width. */}
-      <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-hairline bg-surface p-5 lg:block">
-        <NewsPanel />
-      </aside>
+      <ResizablePanel
+        side="right"
+        storageKey="news-panel-width"
+        defaultWidth={320}
+        minWidth={240}
+        maxWidth={560}
+        className="hidden lg:flex"
+      >
+        <aside className="h-full border-l border-hairline bg-surface p-5">
+          <NewsPanel />
+        </aside>
+      </ResizablePanel>
     </div>
   );
 }

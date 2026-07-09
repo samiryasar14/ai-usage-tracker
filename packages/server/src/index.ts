@@ -228,8 +228,8 @@ app.delete<{ Params: { id: string } }>("/api/saved-views/:id", async (req, reply
   reply.code(204);
 });
 
-app.get<{ Querystring: { limit?: string } }>("/api/news", async (req) => {
-  return getNews(Number(req.query.limit ?? 20));
+app.get<{ Querystring: { limit?: string; force?: string } }>("/api/news", async (req) => {
+  return getNews(Number(req.query.limit ?? 20), req.query.force === "1");
 });
 
 const VALID_PERIODS: ReportPeriod[] = ["day", "week", "month"];

@@ -192,6 +192,7 @@ export interface NewsItem {
   source: string;
   publishedAt: string | null;
   summary: string | null;
+  imageUrl: string | null;
 }
 
 export function reportExportUrl(period: ReportPeriod, format: ReportFormat): string {
@@ -235,7 +236,8 @@ export const api = {
   createSavedView: (name: string, viewType: string, filterConfig: string) =>
     postJson<SavedView>("/api/saved-views", { name, viewType, filterConfig }),
   deleteSavedView: (id: string) => del(`/api/saved-views/${id}`),
-  news: (limit = 20) => getJson<NewsItem[]>(`/api/news?limit=${limit}`),
+  news: (limit = 20, force = false) =>
+    getJson<NewsItem[]>(`/api/news?limit=${limit}${force ? "&force=1" : ""}`),
 };
 
 interface SocketHandlers {

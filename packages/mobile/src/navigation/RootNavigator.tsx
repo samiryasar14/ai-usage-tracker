@@ -8,6 +8,7 @@ import { ProjectsScreen } from "../screens/ProjectsScreen";
 import { AssistantScreen } from "../screens/AssistantScreen";
 import { getPairedConnection } from "../storage";
 import { onUnauthorized } from "../authEvents";
+import { useActivityNotifications } from "../activityNotifications";
 
 const Tab = createBottomTabNavigator();
 
@@ -19,6 +20,11 @@ export function RootNavigator() {
     getPairedConnection().then((connection) => setPaired(connection !== null));
     return onUnauthorized(() => setPaired(false));
   }, []);
+
+  // Polls the desktop's activity feed for budget/usage events and fires
+  // local notifications for them — runs for as long as this component
+  // stays mounted while paired, i.e. across all tabs, not just Dashboard.
+  useActivityNotifications(paired === true);
 
   if (paired === undefined) {
     return (

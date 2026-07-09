@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
@@ -8,10 +8,19 @@ import { Section } from "../components/Section";
 import { TimelineList } from "../components/TimelineList";
 import { ModelLeaderboardList } from "../components/ModelLeaderboardList";
 import { formatCompactNumber, formatCount, formatCurrency } from "../components/format";
+import { getNotificationPermissionGranted } from "../notifications";
 
 export function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
+  // Reliable fallback for the same note PairingScreen tries to show right
+  // after pairing — that one can miss its window if the app has already
+  // navigated away by the time the permission prompt resolves.
+  const [notificationsDenied, setNotificationsDenied] = useState(false);
+
+  useEffect(() => {
+    getNotificationPermissionGranted().then((granted) => setNotificationsDenied(!granted));
+  }, []);
 
   const overviewQuery = useQuery({ queryKey: ["overview"], queryFn: api.overview });
   const forecastQuery = useQuery({ queryKey: ["forecast"], queryFn: api.forecast });
@@ -42,6 +51,11 @@ export function DashboardScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#22d3ee" />}
       >
         <Text style={styles.pageTitle}>Dashboard</Text>
+        {notificationsDenied && (
+          <Text style={styles.notificationsNote}>
+            Notifications are off — enable them in system settings to get budget alerts.
+          </Text>
+        )}
 
         {overviewQuery.isLoading || forecastQuery.isLoading ? (
           <Text style={styles.muted}>Loading…</Text>
@@ -92,6 +106,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#0d0d0d" },
   content: { padding: 20, paddingBottom: 40 },
   pageTitle: { fontSize: 22, fontWeight: "700", color: "#fff", marginBottom: 16 },
+  notificationsNote: { fontSize: 12, color: "#8a8a8a", marginTop: -12, marginBottom: 16 },
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",

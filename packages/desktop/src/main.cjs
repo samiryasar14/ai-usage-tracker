@@ -2,7 +2,7 @@
 // elsewhere in the monorepo) since it's a thin bootstrap shell: spawn the
 // Fastify server as a child process, wait for it to accept connections, then
 // point a BrowserWindow at the dashboard.
-const { app, BrowserWindow, Menu, dialog, shell, ipcMain, safeStorage } = require("electron");
+const { app, BrowserWindow, Menu, dialog, shell, ipcMain, safeStorage, Notification } = require("electron");
 const { spawn } = require("node:child_process");
 const path = require("node:path");
 const net = require("node:net");
@@ -12,6 +12,21 @@ const SERVER_PORT = 4317;
 const DASHBOARD_DEV_URL = "http://localhost:5173";
 
 let serverProcess;
+let mainWindow;
+
+// Shared by the renderer-facing "show-notification" IPC handler and the
+// autoUpdater listeners below, so the isSupported/click-to-focus dance only
+// lives in one place.
+function showNativeNotification(title, body) {
+  if (!Notification.isSupported()) return;
+  const notification = new Notification({ title, body });
+  notification.on("click", () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  });
+  notification.show();
+}
 
 function waitForPort(port, host, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
@@ -127,6 +142,10 @@ async function createWindow() {
       preload: path.join(__dirname, "preload.cjs"),
     },
   });
+  mainWindow = win;
+  win.on("closed", () => {
+    if (mainWindow === win) mainWindow = undefined;
+  });
 
   if (!app.isPackaged) {
     await win.loadURL(DASHBOARD_DEV_URL);
@@ -191,6 +210,12 @@ ipcMain.handle("clear-openai-key", () => {
   }
 });
 
+// Backs window.electronAPI.showNotification(title, body) — used by the
+// dashboard's websocket onAlert handler to surface a native OS notification.
+ipcMain.handle("show-notification", (event, title, body) => {
+  showNativeNotification(title, body);
+});
+
 app.whenReady().then(async () => {
   // No native File/Edit/View/Window menu bar — the app's own UI (Settings
   // tab) covers everything that menu used to expose, and a bare menu bar
@@ -216,6 +241,15 @@ app.whenReady().then(async () => {
     // this will just log a "no releases found" error until one is cut.
     try {
       const { autoUpdater } = require("electron-updater");
+      autoUpdater.on("update-available", (info) => {
+        showNativeNotification(
+          "Soar AI Tracker update available",
+          info && info.version ? `Version ${info.version} is downloading in the background.` : "A new version is downloading in the background.",
+        );
+      });
+      autoUpdater.on("update-downloaded", () => {
+        showNativeNotification("Update ready to install", "Restart Soar AI Tracker to apply the update.");
+      });
       autoUpdater.checkForUpdatesAndNotify().catch((err) => {
         console.error("Auto-update check failed:", err);
       });

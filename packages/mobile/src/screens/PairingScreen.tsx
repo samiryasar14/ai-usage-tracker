@@ -11,6 +11,7 @@ import {
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from "expo-camera";
 import { claimPairing } from "../apiClient";
 import { savePairedConnection } from "../storage";
+import { requestNotificationPermission } from "../notifications";
 
 interface PairingScreenProps {
   onPaired: () => void;
@@ -44,6 +45,7 @@ export function PairingScreen({ onPaired }: PairingScreenProps) {
   const [manualCode, setManualCode] = useState("");
   const [pairing, setPairing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notificationsDenied, setNotificationsDenied] = useState(false);
 
   async function completePairing(host: string, port: number, code: string) {
     setPairing(true);
@@ -52,6 +54,11 @@ export function PairingScreen({ onPaired }: PairingScreenProps) {
       const deviceName = `${Platform.OS === "ios" ? "iPhone" : "Android"} device`;
       const connection = await claimPairing(host, port, code, deviceName);
       await savePairedConnection(connection);
+      // Fire and forget — don't hold up the pairing success transition on
+      // the user responding to the OS permission prompt.
+      requestNotificationPermission()
+        .then((granted) => setNotificationsDenied(!granted))
+        .catch(() => {});
       onPaired();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Pairing failed");
@@ -79,6 +86,12 @@ export function PairingScreen({ onPaired }: PairingScreenProps) {
         Open Soar AI Tracker on your desktop, go to Settings → Pair a Mobile Device, and scan the code shown — or
         enter it below. Your phone and desktop need to be on the same WiFi network.
       </Text>
+      <Text style={styles.notice}>
+        Notifications fire while the app is open or recently used — they won't wake the app if fully closed.
+      </Text>
+      {notificationsDenied && (
+        <Text style={styles.notice}>Enable notifications in system settings to get budget alerts.</Text>
+      )}
 
       {permission?.granted ? (
         <View style={styles.cameraWrapper}>
@@ -146,6 +159,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0d0d0d", padding: 20, paddingTop: 60 },
   title: { fontSize: 22, fontWeight: "700", color: "#fff" },
   subtitle: { fontSize: 13, color: "#a3a3a3", marginTop: 8, lineHeight: 18 },
+  notice: { fontSize: 12, color: "#8a8a8a", marginTop: 8, lineHeight: 16 },
   cameraWrapper: { height: 280, borderRadius: 12, overflow: "hidden", marginTop: 20 },
   camera: { flex: 1 },
   cameraOverlay: {
