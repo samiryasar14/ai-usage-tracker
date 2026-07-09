@@ -1,14 +1,12 @@
 import { Download as DownloadIcon, ShieldAlert } from "lucide-react";
 import { GITHUB_RELEASES_URL } from "../constants";
+import { Reveal } from "./Reveal";
 
 export function Download() {
   return (
     <section id="download" className="relative mx-auto max-w-6xl px-6 py-20 sm:py-28">
-      <div className="relative overflow-hidden rounded-3xl border border-hairline bg-surface px-6 py-16 text-center sm:px-12 sm:py-20">
-        <div
-          className="pointer-events-none absolute inset-x-0 -top-24 mx-auto h-64 w-[36rem] rounded-full opacity-20 blur-3xl"
-          style={{ background: "radial-gradient(closest-side, var(--series-1), var(--series-2), transparent)" }}
-        />
+      <Reveal className="relative overflow-hidden rounded-3xl border border-hairline bg-surface px-6 py-16 text-center sm:px-12 sm:py-20">
+        <div className="pointer-events-none absolute inset-x-0 -top-24 mx-auto h-64 w-[36rem] animate-pulse rounded-full bg-[radial-gradient(closest-side,var(--series-1),var(--series-2),transparent)] opacity-20 blur-3xl [animation-duration:4s]" />
 
         <div className="relative">
           <h2 className="text-3xl font-bold tracking-tight text-text-primary sm:text-4xl">
@@ -39,7 +37,7 @@ export function Download() {
             </p>
           </div>
         </div>
-      </div>
+      </Reveal>
     </section>
   );
 }

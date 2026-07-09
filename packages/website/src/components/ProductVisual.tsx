@@ -43,6 +43,13 @@ export function ProductVisual() {
             <LayoutDashboard size={13} />
             Soar AI Tracker — Dashboard
           </div>
+          <div className="ml-auto flex items-center gap-1.5 text-[11px] font-medium text-emerald-500">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            </span>
+            Live
+          </div>
         </div>
 
         <div className="p-5 sm:p-8">

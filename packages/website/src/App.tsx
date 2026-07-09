@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { Download } from "./components/Download";
+import { FAQ } from "./components/FAQ";
 import { Features } from "./components/Features";
 import { Footer } from "./components/Footer";
 import { Hero } from "./components/Hero";
+import { HowItWorks } from "./components/HowItWorks";
 import { Nav } from "./components/Nav";
+import { StatsBar } from "./components/StatsBar";
 
 function useDarkMode() {
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
@@ -28,7 +31,10 @@ export function App() {
       <Nav dark={dark} onToggleDark={toggleDark} />
       <main>
         <Hero />
+        <StatsBar />
+        <HowItWorks />
         <Features />
+        <FAQ />
         <Download />
       </main>
       <Footer />

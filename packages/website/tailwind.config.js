@@ -18,6 +18,7 @@ export default {
         float: "float 6s ease-in-out infinite",
         "float-delayed": "float 6s ease-in-out 2s infinite",
         "grow-bar": "grow-bar 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "fade-up": "fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both",
       },
       keyframes: {
         float: {
@@ -27,6 +28,10 @@ export default {
         "grow-bar": {
           from: { transform: "scaleY(0)" },
           to: { transform: "scaleY(1)" },
+        },
+        "fade-up": {
+          from: { opacity: "0", transform: "translateY(16px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
         },
       },
     },

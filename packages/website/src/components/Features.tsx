@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { BellRing, Github, Lightbulb, Lock, MessageCircleQuestion, Radar } from "lucide-react";
+import { Reveal } from "./Reveal";
 
 interface Feature {
   icon: LucideIcon;
@@ -48,31 +49,27 @@ const FEATURES: Feature[] = [
 export function Features() {
   return (
     <section id="features" className="relative mx-auto max-w-6xl px-6 py-20 sm:py-28">
-      <div className="mx-auto max-w-2xl text-center">
+      <Reveal className="mx-auto max-w-2xl text-center">
         <h2 className="text-3xl font-bold tracking-tight text-text-primary sm:text-4xl">
           Everything you need to stay ahead of the bill
         </h2>
         <p className="mt-4 text-lg text-text-secondary">
           Soar AI Tracker turns scattered log files into a clear picture of what you're actually spending.
         </p>
-      </div>
+      </Reveal>
 
       <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {FEATURES.map(({ icon: Icon, title, description }) => (
-          <div
-            key={title}
-            className="group relative overflow-hidden rounded-xl border border-hairline bg-surface p-6 transition-colors hover:border-series-1/40"
-          >
-            <div
-              className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-20"
-              style={{ background: "radial-gradient(closest-side, var(--series-1), var(--series-2))" }}
-            />
-            <span className="relative inline-flex h-11 w-11 items-center justify-center rounded-lg bg-series-1/10 text-series-1">
-              <Icon size={20} />
-            </span>
-            <h3 className="relative mt-4 text-base font-semibold text-text-primary">{title}</h3>
-            <p className="relative mt-2 text-sm leading-relaxed text-text-secondary">{description}</p>
-          </div>
+        {FEATURES.map(({ icon: Icon, title, description }, i) => (
+          <Reveal key={title} delayMs={i * 80}>
+            <div className="group relative h-full overflow-hidden rounded-xl border border-hairline bg-surface p-6 transition-colors hover:border-series-1/40">
+              <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-[radial-gradient(closest-side,var(--series-1),var(--series-2))] opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-20" />
+              <span className="relative inline-flex h-11 w-11 items-center justify-center rounded-lg bg-series-1/10 text-series-1 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:rotate-3">
+                <Icon size={20} />
+              </span>
+              <h3 className="relative mt-4 text-base font-semibold text-text-primary">{title}</h3>
+              <p className="relative mt-2 text-sm leading-relaxed text-text-secondary">{description}</p>
+            </div>
+          </Reveal>
         ))}
       </div>
     </section>

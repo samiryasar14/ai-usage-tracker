@@ -17,23 +17,25 @@ export function Hero() {
 
       <div className="relative mx-auto max-w-6xl px-6 pb-20 pt-20 sm:pb-28 sm:pt-28">
         <div className="mx-auto max-w-3xl text-center">
-          <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-hairline bg-surface px-3 py-1 text-xs font-medium text-text-secondary">
-            <span className="h-1.5 w-1.5 rounded-full bg-series-1" />
+          <div className="mx-auto mb-6 inline-flex animate-fade-up items-center gap-2 rounded-full border border-hairline bg-surface px-3 py-1 text-xs font-medium text-text-secondary">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-series-1" />
             Free &amp; open source · Local-first · Windows desktop app
           </div>
 
-          <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl md:text-6xl">
+          <h1
+            className="animate-fade-up text-4xl font-bold tracking-tight text-text-primary [animation-delay:80ms] sm:text-5xl md:text-6xl"
+          >
             Know exactly what your{" "}
             <span className="text-gradient">AI coding tools</span> are costing you
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-balance text-lg text-text-secondary sm:text-xl">
+          <p className="mx-auto mt-6 max-w-2xl animate-fade-up text-balance text-lg text-text-secondary [animation-delay:160ms] sm:text-xl">
             Soar AI Tracker watches your Claude Code usage in real time, tracks spend down to the session and project,
             forecasts your monthly bill, and warns you before the bill surprises you — all without a single byte
             leaving your machine.
           </p>
 
-          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <div className="mt-10 flex animate-fade-up flex-col items-center justify-center gap-3 [animation-delay:240ms] sm:flex-row">
             <a
               href={GITHUB_RELEASES_URL}
               target="_blank"
@@ -52,10 +54,12 @@ export function Hero() {
             </a>
           </div>
 
-          <p className="mt-4 text-xs text-text-muted">Free forever. No account, no telemetry, no cloud sync.</p>
+          <p className="mt-4 animate-fade-up text-xs text-text-muted [animation-delay:300ms]">
+            Free forever. No account, no telemetry, no cloud sync.
+          </p>
         </div>
 
-        <div className="relative mt-16 sm:mt-20">
+        <div className="relative mt-16 animate-fade-up [animation-delay:380ms] sm:mt-20">
           <ProductVisual />
         </div>
       </div>
