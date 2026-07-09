@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LayoutDashboard, FolderKanban, History, Sparkles, Settings, Moon, Sun } from "lucide-react";
 import { api, connectRefreshSocket } from "./api";
 import { Logo } from "./components/Logo";
+import { NewsPanel } from "./components/NewsPanel";
 import { DashboardView } from "./views/DashboardView";
 import { ProjectsView } from "./views/ProjectsView";
 import { ActivityView } from "./views/ActivityView";
@@ -60,83 +61,93 @@ export function App() {
   const unpricedModels = overview.data?.unpricedModels ?? [];
 
   return (
-    <div className="min-h-screen bg-plane">
-      <header className="border-b border-hairline bg-surface">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <Logo size={22} />
-              <span className="text-sm font-semibold text-text-primary">Soar AI Tracker</span>
-            </div>
-            <nav className="flex items-center gap-1">
-              {TABS.map(({ key, label, icon: Icon }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setTab(key)}
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                    tab === key
-                      ? "bg-text-primary/[0.06] text-text-primary"
-                      : "text-text-secondary hover:text-text-primary"
-                  }`}
-                >
-                  <Icon size={15} />
-                  {label}
-                </button>
-              ))}
-            </nav>
-          </div>
-          <button
-            type="button"
-            onClick={toggleDark}
-            aria-label="Toggle dark mode"
-            className="rounded-md p-1.5 text-text-secondary hover:text-text-primary"
-          >
-            {dark ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
+    <div className="flex h-screen bg-plane">
+      {/* Icon-only left sidebar — replaces the old top nav bar. Native `title`
+          attributes give hover tooltips without a new dependency. */}
+      <aside className="flex w-16 shrink-0 flex-col items-center border-r border-hairline bg-surface py-4">
+        <div title="Soar AI Tracker">
+          <Logo size={28} />
         </div>
-      </header>
 
-      <div className="mx-auto max-w-6xl px-6 py-8">
-        {toast && (
-          <div className="mb-4 flex items-center justify-between rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-600">
-            <span>{toast}</span>
-            <button type="button" onClick={() => setToast(null)} className="ml-4 font-medium">
-              Dismiss
+        <nav className="mt-8 flex flex-col items-center gap-1">
+          {TABS.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setTab(key)}
+              title={label}
+              aria-label={label}
+              className={`flex h-10 w-10 items-center justify-center rounded-md transition-colors ${
+                tab === key
+                  ? "bg-text-primary/[0.06] text-series-1"
+                  : "text-text-secondary hover:bg-text-primary/[0.04] hover:text-text-primary"
+              }`}
+            >
+              <Icon size={19} />
             </button>
-          </div>
-        )}
+          ))}
+        </nav>
 
-        {!socketConnected && (
-          <div className="mb-4 rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-600">
-            Live updates disconnected — reconnecting… (data will refresh automatically once back online)
-          </div>
-        )}
+        <button
+          type="button"
+          onClick={toggleDark}
+          title="Toggle dark mode"
+          aria-label="Toggle dark mode"
+          className="mt-auto flex h-10 w-10 items-center justify-center rounded-md text-text-secondary hover:bg-text-primary/[0.04] hover:text-text-primary"
+        >
+          {dark ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+      </aside>
 
-        {overview.isError && (
-          <div className="mb-4 flex items-center justify-between rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm text-red-600">
-            <span>Couldn&apos;t reach the Soar AI Tracker server. Is it running?</span>
-            <button type="button" onClick={() => queryClient.invalidateQueries()} className="ml-4 font-medium">
-              Retry
-            </button>
-          </div>
-        )}
+      {/* Center: scrollable main content, independent of the sidebar/news panel. */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-5xl px-6 py-8">
+          {toast && (
+            <div className="mb-4 flex items-center justify-between rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-600">
+              <span>{toast}</span>
+              <button type="button" onClick={() => setToast(null)} className="ml-4 font-medium">
+                Dismiss
+              </button>
+            </div>
+          )}
 
-        {unpricedModels.length > 0 && (
-          <div className="mb-4 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm text-red-600">
-            Cost not counted for {unpricedModels.reduce((sum, m) => sum + m.requestCount, 0)} request
-            {unpricedModels.reduce((sum, m) => sum + m.requestCount, 0) === 1 ? "" : "s"} from unpriced model
-            {unpricedModels.length === 1 ? "" : "s"}: {unpricedModels.map((m) => m.name).join(", ")}. Spend totals
-            below are under-reported until pricing is added for {unpricedModels.length === 1 ? "it" : "them"}.
-          </div>
-        )}
+          {!socketConnected && (
+            <div className="mb-4 rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-600">
+              Live updates disconnected — reconnecting… (data will refresh automatically once back online)
+            </div>
+          )}
 
-        {tab === "dashboard" && <DashboardView />}
-        {tab === "projects" && <ProjectsView />}
-        {tab === "activity" && <ActivityView />}
-        {tab === "assistant" && <AssistantView />}
-        {tab === "settings" && <SettingsView />}
+          {overview.isError && (
+            <div className="mb-4 flex items-center justify-between rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm text-red-600">
+              <span>Couldn&apos;t reach the Soar AI Tracker server. Is it running?</span>
+              <button type="button" onClick={() => queryClient.invalidateQueries()} className="ml-4 font-medium">
+                Retry
+              </button>
+            </div>
+          )}
+
+          {unpricedModels.length > 0 && (
+            <div className="mb-4 rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm text-red-600">
+              Cost not counted for {unpricedModels.reduce((sum, m) => sum + m.requestCount, 0)} request
+              {unpricedModels.reduce((sum, m) => sum + m.requestCount, 0) === 1 ? "" : "s"} from unpriced model
+              {unpricedModels.length === 1 ? "" : "s"}: {unpricedModels.map((m) => m.name).join(", ")}. Spend totals
+              below are under-reported until pricing is added for {unpricedModels.length === 1 ? "it" : "them"}.
+            </div>
+          )}
+
+          {tab === "dashboard" && <DashboardView />}
+          {tab === "projects" && <ProjectsView />}
+          {tab === "activity" && <ActivityView />}
+          {tab === "assistant" && <AssistantView />}
+          {tab === "settings" && <SettingsView />}
+        </div>
       </div>
+
+      {/* Right: AI news panel — scrolls independently, hidden below `lg` since
+          three columns plus content needs real screen width. */}
+      <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-hairline bg-surface p-5 lg:block">
+        <NewsPanel />
+      </aside>
     </div>
   );
 }

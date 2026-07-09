@@ -186,6 +186,14 @@ async function del(path: string): Promise<void> {
   if (!res.ok) throw new Error(`${path} failed: ${res.status}`);
 }
 
+export interface NewsItem {
+  title: string;
+  link: string;
+  source: string;
+  publishedAt: string | null;
+  summary: string | null;
+}
+
 export function reportExportUrl(period: ReportPeriod, format: ReportFormat): string {
   return `${API_BASE}/api/reports/export?period=${period}&format=${format}`;
 }
@@ -227,6 +235,7 @@ export const api = {
   createSavedView: (name: string, viewType: string, filterConfig: string) =>
     postJson<SavedView>("/api/saved-views", { name, viewType, filterConfig }),
   deleteSavedView: (id: string) => del(`/api/saved-views/${id}`),
+  news: (limit = 20) => getJson<NewsItem[]>(`/api/news?limit=${limit}`),
 };
 
 interface SocketHandlers {
