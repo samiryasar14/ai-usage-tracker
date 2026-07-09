@@ -12,6 +12,9 @@
   --baseline: #c7ccd6;
   --series-1: #0ea5c4;
   --series-2: #7c3aed;
+  --series-3: #10b981;
+  --glass-surface: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(10, 11, 13, 0.08);
 }
 
 .dark {
@@ -24,6 +27,9 @@
   --baseline: #2a3145;
   --series-1: #22d3ee;
   --series-2: #a78bfa;
+  --series-3: #34d399;
+  --glass-surface: rgba(13, 15, 22, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.08);
 }
 
 html {
@@ -61,4 +67,56 @@ body {
     linear-gradient(to right, var(--hairline) 1px, transparent 1px),
     linear-gradient(to bottom, var(--hairline) 1px, transparent 1px);
   background-size: 48px 48px;
+}
+
+.glass-panel {
+  background-color: var(--glass-surface);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+@keyframes aurora-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(4%, -6%) scale(1.08);
+  }
+  66% {
+    transform: translate(-3%, 4%) scale(0.96);
+  }
+}
+
+@keyframes drift-slow {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    transform: translateY(-14px) translateX(6px);
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: var(--twinkle-min, 0.15);
+  }
+  50% {
+    opacity: var(--twinkle-max, 0.9);
+  }
+}
+
+.animate-aurora {
+  animation: aurora-drift 18s ease-in-out infinite;
+}
+
+.animate-drift-slow {
+  animation: drift-slow 8s ease-in-out infinite;
+}
+
+.animate-twinkle {
+  animation: twinkle 3s ease-in-out infinite;
 }

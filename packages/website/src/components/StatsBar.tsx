@@ -11,9 +11,9 @@ export function StatsBar() {
   return (
     <section className="relative mx-auto max-w-6xl px-6 pb-4">
       <Reveal>
-        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-hairline bg-hairline sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-hairline bg-hairline/60 backdrop-blur-xl sm:grid-cols-4">
           {STATS.map((stat) => (
-            <div key={stat.label} className="bg-surface px-5 py-6 text-center">
+            <div key={stat.label} className="bg-surface/70 px-5 py-6 text-center">
               <div className="text-2xl font-bold tracking-tight text-gradient sm:text-3xl">{stat.value}</div>
               <div className="mt-1 text-xs text-text-secondary">{stat.label}</div>
             </div>

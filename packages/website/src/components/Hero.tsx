@@ -1,32 +1,73 @@
+import { useRef } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { ArrowRight, Download } from "lucide-react";
 import { GITHUB_RELEASES_URL } from "../constants";
 import { ProductVisual } from "./ProductVisual";
 
+function TiltStage({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const px = useMotionValue(0.5);
+  const py = useMotionValue(0.5);
+  const rotateX = useSpring(useTransform(py, [0, 1], [7, -7]), { stiffness: 120, damping: 20 });
+  const rotateY = useSpring(useTransform(px, [0, 1], [-7, 7]), { stiffness: 120, damping: 20 });
+
+  function onPointerMove(e: ReactPointerEvent<HTMLDivElement>) {
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect) return;
+    px.set((e.clientX - rect.left) / rect.width);
+    py.set((e.clientY - rect.top) / rect.height);
+  }
+
+  function onPointerLeave() {
+    px.set(0.5);
+    py.set(0.5);
+  }
+
+  return (
+    <div
+      ref={ref}
+      onPointerMove={onPointerMove}
+      onPointerLeave={onPointerLeave}
+      className="[perspective:1400px]"
+    >
+      <motion.div style={{ rotateX, rotateY }}>{children}</motion.div>
+    </div>
+  );
+}
+
 export function Hero() {
   return (
     <section id="top" className="relative overflow-hidden">
-      <div className="bg-grid pointer-events-none absolute inset-0 opacity-40 [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,black,transparent)]" />
-      <div
-        className="pointer-events-none absolute -top-32 left-1/2 h-[32rem] w-[32rem] -translate-x-1/2 rounded-full opacity-20 blur-3xl"
-        style={{ background: "radial-gradient(closest-side, var(--series-1), transparent)" }}
-      />
-      <div
-        className="pointer-events-none absolute -top-16 left-1/2 h-96 w-96 translate-x-1/3 rounded-full opacity-20 blur-3xl"
-        style={{ background: "radial-gradient(closest-side, var(--series-2), transparent)" }}
-      />
-
       <div className="relative mx-auto max-w-6xl px-6 pb-20 pt-20 sm:pb-28 sm:pt-28">
         <div className="mx-auto max-w-3xl text-center">
-          <div className="mx-auto mb-6 inline-flex animate-fade-up items-center gap-2 rounded-full border border-hairline bg-surface px-3 py-1 text-xs font-medium text-text-secondary">
+          <div className="glass-panel mx-auto mb-6 inline-flex animate-fade-up items-center gap-2 rounded-full px-3 py-1 text-xs font-medium text-text-secondary">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-series-1" />
             Free &amp; open source · Local-first · Windows desktop app
           </div>
 
-          <h1
-            className="animate-fade-up text-4xl font-bold tracking-tight text-text-primary [animation-delay:80ms] sm:text-5xl md:text-6xl"
-          >
+          <h1 className="animate-fade-up text-4xl font-bold tracking-tight text-text-primary [animation-delay:80ms] sm:text-5xl md:text-6xl">
             Know exactly what your{" "}
-            <span className="text-gradient">AI coding tools</span> are costing you
+            <span className="relative inline-block">
+              <span className="text-gradient">AI coding tools</span>
+              <svg
+                viewBox="0 0 200 12"
+                className="absolute -bottom-2 left-0 h-3 w-full text-series-1/70"
+                preserveAspectRatio="none"
+              >
+                <path
+                  d="M2 8 C 50 2, 150 2, 198 8"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  pathLength={1}
+                  strokeDasharray={1}
+                  className="animate-draw-line"
+                />
+              </svg>
+            </span>{" "}
+            are costing you
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl animate-fade-up text-balance text-lg text-text-secondary [animation-delay:160ms] sm:text-xl">
@@ -40,7 +81,7 @@ export function Hero() {
               href={GITHUB_RELEASES_URL}
               target="_blank"
               rel="noreferrer"
-              className="group inline-flex items-center gap-2 rounded-lg bg-text-primary px-6 py-3 text-sm font-semibold text-plane shadow-lg shadow-text-primary/10 transition-transform hover:scale-[1.02] active:scale-[0.98]"
+              className="group relative inline-flex items-center gap-2 overflow-hidden rounded-lg bg-text-primary px-6 py-3 text-sm font-semibold text-plane shadow-lg shadow-series-1/20 transition-transform hover:scale-[1.02] active:scale-[0.98]"
             >
               <Download size={17} />
               Download for Windows
@@ -48,7 +89,7 @@ export function Hero() {
             </a>
             <a
               href="#features"
-              className="inline-flex items-center gap-2 rounded-lg border border-hairline bg-surface px-6 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-text-primary/[0.04]"
+              className="glass-panel inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-text-primary/[0.04]"
             >
               See what it does
             </a>
@@ -60,7 +101,9 @@ export function Hero() {
         </div>
 
         <div className="relative mt-16 animate-fade-up [animation-delay:380ms] sm:mt-20">
-          <ProductVisual />
+          <TiltStage>
+            <ProductVisual />
+          </TiltStage>
         </div>
       </div>
     </section>

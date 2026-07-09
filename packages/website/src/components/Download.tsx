@@ -1,11 +1,17 @@
-import { Download as DownloadIcon, ShieldAlert } from "lucide-react";
+import { Download as DownloadIcon, ShieldAlert, Apple, Terminal } from "lucide-react";
 import { GITHUB_RELEASES_URL } from "../constants";
 import { Reveal } from "./Reveal";
+
+const PLATFORMS = [
+  { icon: DownloadIcon, name: "Windows", status: "available" as const },
+  { icon: Apple, name: "macOS", status: "soon" as const },
+  { icon: Terminal, name: "Linux", status: "soon" as const },
+];
 
 export function Download() {
   return (
     <section id="download" className="relative mx-auto max-w-6xl px-6 py-20 sm:py-28">
-      <Reveal className="relative overflow-hidden rounded-3xl border border-hairline bg-surface px-6 py-16 text-center sm:px-12 sm:py-20">
+      <Reveal className="glass-panel relative overflow-hidden rounded-3xl px-6 py-16 text-center sm:px-12 sm:py-20">
         <div className="pointer-events-none absolute inset-x-0 -top-24 mx-auto h-64 w-[36rem] animate-pulse rounded-full bg-[radial-gradient(closest-side,var(--series-1),var(--series-2),transparent)] opacity-20 blur-3xl [animation-duration:4s]" />
 
         <div className="relative">
@@ -21,11 +27,28 @@ export function Download() {
               href={GITHUB_RELEASES_URL}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg bg-text-primary px-7 py-3.5 text-sm font-semibold text-plane shadow-lg shadow-text-primary/10 transition-transform hover:scale-[1.02] active:scale-[0.98]"
+              className="inline-flex items-center gap-2 rounded-lg bg-text-primary px-7 py-3.5 text-sm font-semibold text-plane shadow-lg shadow-series-1/20 transition-transform hover:scale-[1.02] active:scale-[0.98]"
             >
               <DownloadIcon size={18} />
               Download for Windows
             </a>
+          </div>
+
+          <div className="mt-6 flex justify-center gap-3">
+            {PLATFORMS.map(({ icon: Icon, name, status }) => (
+              <div
+                key={name}
+                className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium ${
+                  status === "available"
+                    ? "border-series-1/40 text-series-1"
+                    : "border-dashed border-hairline text-text-muted"
+                }`}
+              >
+                <Icon size={13} />
+                {name}
+                {status === "soon" && <span className="text-[10px] uppercase tracking-wide">Soon</span>}
+              </div>
+            ))}
           </div>
 
           <div className="mx-auto mt-8 flex max-w-xl items-start gap-3 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-left text-sm text-amber-700 dark:text-amber-400">

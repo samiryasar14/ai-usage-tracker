@@ -1,6 +1,9 @@
 import type { LucideIcon } from "lucide-react";
 import { BellRing, Github, Lightbulb, Lock, MessageCircleQuestion, Radar } from "lucide-react";
+import { FeatureSpotlight } from "./FeatureSpotlight";
 import { Reveal } from "./Reveal";
+import { BudgetGaugeVisual } from "./visuals/BudgetGaugeVisual";
+import { UsageChartVisual } from "./visuals/UsageChartVisual";
 
 interface Feature {
   icon: LucideIcon;
@@ -8,19 +11,7 @@ interface Feature {
   description: string;
 }
 
-const FEATURES: Feature[] = [
-  {
-    icon: Radar,
-    title: "Usage tracking",
-    description:
-      "Real-time spend and token tracking across every session and project, broken down by model — updated live as you work.",
-  },
-  {
-    icon: BellRing,
-    title: "Budget alerts & forecasting",
-    description:
-      "Set a monthly budget and get alerted as you approach it. A simple cost forecast projects where you'll land before the month ends.",
-  },
+const MORE_FEATURES: Feature[] = [
   {
     icon: MessageCircleQuestion,
     title: "AI assistant",
@@ -30,8 +21,7 @@ const FEATURES: Feature[] = [
   {
     icon: Lightbulb,
     title: "Per-project recommendations",
-    description:
-      "AI-suggested budget limits for each project, based on your real usage trends instead of guesswork.",
+    description: "AI-suggested budget limits for each project, based on your real usage trends instead of guesswork.",
   },
   {
     icon: Lock,
@@ -58,8 +48,27 @@ export function Features() {
         </p>
       </Reveal>
 
-      <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {FEATURES.map(({ icon: Icon, title, description }, i) => (
+      <div className="mt-16 space-y-20">
+        <FeatureSpotlight
+          icon={Radar}
+          title="Usage tracking"
+          description="Real-time spend and token tracking across every session and project, broken down by model — updated live as you work."
+          bullets={["Live token + spend counters", "Broken down per model and project", "Updates as you work, no refresh"]}
+          visual={<UsageChartVisual />}
+        />
+
+        <FeatureSpotlight
+          icon={BellRing}
+          title="Budget alerts & forecasting"
+          description="Set a monthly budget and get alerted as you approach it. A simple cost forecast projects where you'll land before the month ends."
+          bullets={["Alerts at 80% and over-budget", "Month-end cost forecast", "Native desktop + mobile notifications"]}
+          visual={<BudgetGaugeVisual />}
+          reverse
+        />
+      </div>
+
+      <div className="mt-20 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {MORE_FEATURES.map(({ icon: Icon, title, description }, i) => (
           <Reveal key={title} delayMs={i * 80}>
             <div className="group relative h-full overflow-hidden rounded-xl border border-hairline bg-surface p-6 transition-colors hover:border-series-1/40">
               <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-[radial-gradient(closest-side,var(--series-1),var(--series-2))] opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-20" />

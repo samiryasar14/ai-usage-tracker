@@ -22,8 +22,8 @@ export function Nav({ dark, onToggleDark }: NavProps) {
 
   return (
     <header
-      className={`sticky top-0 z-50 border-b bg-plane/80 backdrop-blur-md transition-shadow duration-300 ${
-        scrolled ? "border-hairline shadow-sm shadow-black/5" : "border-hairline/70"
+      className={`sticky top-0 z-50 border-b backdrop-blur-xl transition-all duration-300 ${
+        scrolled ? "border-hairline bg-plane/80 shadow-sm shadow-black/10" : "border-transparent bg-plane/30"
       }`}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
@@ -32,12 +32,18 @@ export function Nav({ dark, onToggleDark }: NavProps) {
           <span className="text-sm font-semibold tracking-tight text-text-primary">Soar AI Tracker</span>
         </a>
 
-        <nav className="hidden items-center gap-6 text-sm font-medium text-text-secondary sm:flex">
+        <nav className="hidden items-center gap-6 text-sm font-medium text-text-secondary lg:flex">
+          <a href="#integrations" className="transition-colors hover:text-text-primary">
+            Integrations
+          </a>
           <a href="#how-it-works" className="transition-colors hover:text-text-primary">
             How it works
           </a>
           <a href="#features" className="transition-colors hover:text-text-primary">
             Features
+          </a>
+          <a href="#open-source" className="transition-colors hover:text-text-primary">
+            Open Source
           </a>
           <a href="#faq" className="transition-colors hover:text-text-primary">
             FAQ
@@ -62,6 +68,12 @@ export function Nav({ dark, onToggleDark }: NavProps) {
           >
             {dark ? <Sun size={16} /> : <Moon size={16} />}
           </button>
+          <a
+            href="#download"
+            className="hidden items-center gap-1.5 rounded-md bg-text-primary px-3.5 py-1.5 text-sm font-semibold text-plane transition-transform hover:scale-[1.03] sm:flex"
+          >
+            Download
+          </a>
         </div>
       </div>
     </header>

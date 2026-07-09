@@ -38,7 +38,7 @@ export function FAQ() {
       <div className="mt-10 space-y-3">
         {FAQS.map(({ question, answer }, i) => (
           <Reveal key={question} delayMs={i * 60}>
-            <details className="group rounded-xl border border-hairline bg-surface px-5 py-4 open:pb-5 [&_summary::-webkit-details-marker]:hidden">
+            <details className="glass-panel group rounded-xl px-5 py-4 open:pb-5 [&_summary::-webkit-details-marker]:hidden">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-text-primary">
                 {question}
                 <ChevronDown
