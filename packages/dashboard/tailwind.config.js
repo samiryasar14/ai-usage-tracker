@@ -12,6 +12,7 @@ export default {
         "text-muted": "var(--text-muted)",
         hairline: "var(--hairline)",
         "series-1": "var(--series-1)",
+        "series-2": "var(--series-2)",
       },
     },
   },

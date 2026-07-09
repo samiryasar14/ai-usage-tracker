@@ -67,9 +67,18 @@ export function App() {
       {/* Icon-only left sidebar — replaces the old top nav bar. Native `title`
           attributes give hover tooltips without a new dependency. */}
       <ResizablePanel side="left" storageKey="sidebar-width" defaultWidth={64} minWidth={56} maxWidth={112}>
-        <aside className="flex h-full flex-col items-center border-r border-hairline bg-surface py-4">
-          <div title="Soar AI Tracker">
+        <aside className="glass-panel flex h-full flex-col items-center py-4">
+          <div className="relative" title="Soar AI Tracker">
             <Logo size={28} />
+            {/* Small live-connection indicator — reflects the same socketConnected
+                state as the "Live updates disconnected" banner below, just as an
+                always-visible glance rather than only appearing on disconnect. */}
+            <span
+              title={socketConnected ? "Live" : "Reconnecting…"}
+              className={`absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full ${
+                socketConnected ? "bg-series-1 animate-live-pulse" : "bg-text-muted"
+              }`}
+            />
           </div>
 
           <nav className="mt-8 flex flex-col items-center gap-1">
@@ -157,7 +166,7 @@ export function App() {
         maxWidth={560}
         className="hidden lg:flex"
       >
-        <aside className="h-full border-l border-hairline bg-surface p-5">
+        <aside className="glass-panel h-full p-5">
           <NewsPanel />
         </aside>
       </ResizablePanel>

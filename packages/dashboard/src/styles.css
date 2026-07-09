@@ -14,6 +14,13 @@
   --hairline: #e2e5eb;
   --baseline: #c7ccd6;
   --series-1: #0ea5c4;
+  /* series-2 and the glass tokens below are new — pulled in from the website's
+     palette (packages/website/src/styles.css) to match exactly. series-1 and
+     every surface/text/hairline token above already matched the website 1:1,
+     so those were left untouched. */
+  --series-2: #7c3aed;
+  --glass-surface: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(10, 11, 13, 0.08);
 }
 
 .dark {
@@ -25,10 +32,50 @@
   --hairline: #1b2030;
   --baseline: #2a3145;
   --series-1: #22d3ee;
+  --series-2: #a78bfa;
+  --glass-surface: rgba(13, 15, 22, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.08);
 }
 
 body {
   background-color: var(--page-plane);
   color: var(--text-primary);
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Same recipe as the website's .glass-panel (packages/website/src/styles.css)
+   — used sparingly here, only on a few high-visibility, low-text-density
+   surfaces (stat cards, sidebar, news panel). Dense tables/lists keep the
+   solid bg-surface so small text stays crisp. */
+.glass-panel {
+  background-color: var(--glass-surface);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+/* Restrained breathing glow for the sidebar "live" connection dot — not a
+   looping background effect, just a small status indicator. */
+@keyframes live-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--series-1);
+  }
+  50% {
+    box-shadow: 0 0 6px 2px var(--series-1);
+  }
+}
+
+.animate-live-pulse {
+  animation: live-pulse 2.2s ease-in-out infinite;
 }
