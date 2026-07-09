@@ -15,6 +15,7 @@
     "@ai-usage-tracker/db": "workspace:*",
     "@ai-usage-tracker/shared": "workspace:*",
     "@ai-usage-tracker/plugin-claude-code": "workspace:*",
+    "@ai-usage-tracker/plugin-openai": "workspace:*",
     "@fastify/cors": "^10.0.1",
     "@fastify/websocket": "^11.0.1",
     "@prisma/client": "^6.2.1",

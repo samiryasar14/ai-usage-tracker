@@ -149,6 +149,20 @@ export async function getProjectAnalytics() {
     ORDER BY cost DESC
   `;
 
+  const tags = await db.tag.findMany({
+    where: { projects: { some: { id: { in: rows.map((r) => r.projectId) } } } },
+    include: { projects: { select: { id: true } } },
+  });
+
+  const tagsByProject = new Map<string, typeof tags>();
+  for (const tag of tags) {
+    for (const project of tag.projects) {
+      const existing = tagsByProject.get(project.id) ?? [];
+      existing.push(tag);
+      tagsByProject.set(project.id, existing);
+    }
+  }
+
   return rows.map((r) => ({
     projectId: r.projectId,
     name: r.name,
@@ -158,6 +172,7 @@ export async function getProjectAnalytics() {
     cost: r.cost ?? 0,
     sessions: Number(r.sessions),
     lastActiveAt: r.lastActiveMs ? new Date(Number(r.lastActiveMs)) : null,
+    tags: (tagsByProject.get(r.projectId) ?? []).map((t) => ({ id: t.id, name: t.name, color: t.color })),
   }));
 }
 

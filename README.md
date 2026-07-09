@@ -1,10 +1,10 @@
-# AI Usage Hub
+# Soar AI Tracker
 
 A local-first desktop app for tracking usage and spend across AI coding tools, starting with Claude Code.
 
 ## What it does
 
-AI Usage Hub tails your local Claude Code session logs (`~/.claude/projects/*/*.jsonl`), normalizes token/cost usage per request, and surfaces it in a live dashboard: spend over time, model leaderboard, per-project breakdown, session history, budget alerts, and a simple cost forecast.
+Soar AI Tracker tails your local Claude Code session logs (`~/.claude/projects/*/*.jsonl`), normalizes token/cost usage per request, and surfaces it in a live dashboard: spend over time, model leaderboard, per-project breakdown, session history, budget alerts, and a simple cost forecast.
 
 It runs as an Electron desktop app with an embedded local server — no data leaves your machine.
 

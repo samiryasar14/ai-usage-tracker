@@ -1,5 +1,6 @@
 import { getDb } from "@ai-usage-tracker/db";
 import { Prisma } from "@ai-usage-tracker/db";
+import { logActivity } from "./activity.js";
 
 function currentMonthSpendWhere() {
   const now = new Date();
@@ -70,6 +71,7 @@ export async function checkBudgetAlerts() {
           message: `Monthly spend $${spend.toFixed(2)} has exceeded the $${rule.thresholdUsd.toFixed(2)} budget.`,
         },
       });
+      await logActivity("alert_triggered", event.message);
       newEvents.push(event);
     } catch (err) {
       // P2002 = unique constraint violation on (ruleId, periodKey) — already alerted this period.

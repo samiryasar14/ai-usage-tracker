@@ -1,4 +1,5 @@
 import { getDb } from "@ai-usage-tracker/db";
+import { logActivity } from "./activity.js";
 
 export interface SubscriptionInput {
   name: string;
@@ -15,7 +16,7 @@ export async function listSubscriptions() {
 
 export async function createSubscription(input: SubscriptionInput) {
   const db = getDb();
-  return db.subscription.create({
+  const subscription = await db.subscription.create({
     data: {
       name: input.name,
       monthlyCostUsd: input.monthlyCostUsd,
@@ -24,6 +25,11 @@ export async function createSubscription(input: SubscriptionInput) {
       notes: input.notes ?? null,
     },
   });
+  await logActivity(
+    "subscription_added",
+    `Added subscription "${input.name}" ($${input.monthlyCostUsd.toFixed(2)}/mo)`,
+  );
+  return subscription;
 }
 
 export async function updateSubscription(id: string, input: Partial<SubscriptionInput>) {
@@ -42,5 +48,9 @@ export async function updateSubscription(id: string, input: Partial<Subscription
 
 export async function deleteSubscription(id: string) {
   const db = getDb();
+  const subscription = await db.subscription.findUnique({ where: { id } });
   await db.subscription.delete({ where: { id } });
+  if (subscription) {
+    await logActivity("subscription_removed", `Removed subscription "${subscription.name}"`);
+  }
 }

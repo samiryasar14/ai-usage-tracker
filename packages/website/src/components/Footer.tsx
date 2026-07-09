@@ -10,7 +10,7 @@ export function Footer() {
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-10 sm:flex-row">
         <div className="flex items-center gap-2">
           <Logo size={20} />
-          <span className="text-sm font-medium text-text-secondary">AI Usage Hub</span>
+          <span className="text-sm font-medium text-text-secondary">Soar AI Tracker</span>
         </div>
 
         <a
@@ -23,7 +23,7 @@ export function Footer() {
           View source on GitHub
         </a>
 
-        <p className="text-xs text-text-muted">© {year} AI Usage Hub. MIT licensed. Local-first, always.</p>
+        <p className="text-xs text-text-muted">© {year} Soar AI Tracker. MIT licensed. Local-first, always.</p>
       </div>
     </footer>
   );

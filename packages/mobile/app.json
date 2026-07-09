@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "AI Usage Hub",
+    "name": "Soar AI Tracker",
     "slug": "ai-usage-hub-mobile",
     "scheme": "ai-usage-hub-mobile",
     "version": "0.1.0",
@@ -14,8 +14,8 @@
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true
         },
-        "NSLocalNetworkUsageDescription": "AI Usage Hub connects to your desktop app over your local WiFi network to show your usage data.",
-        "NSCameraUsageDescription": "AI Usage Hub uses the camera to scan the pairing QR code shown by the desktop app."
+        "NSLocalNetworkUsageDescription": "Soar AI Tracker connects to your desktop app over your local WiFi network to show your usage data.",
+        "NSCameraUsageDescription": "Soar AI Tracker uses the camera to scan the pairing QR code shown by the desktop app."
       }
     },
     "android": {
@@ -36,7 +36,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "AI Usage Hub uses the camera to scan the pairing QR code shown by the desktop app."
+          "cameraPermission": "Soar AI Tracker uses the camera to scan the pairing QR code shown by the desktop app."
         }
       ],
       "expo-secure-store"

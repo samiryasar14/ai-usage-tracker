@@ -18,7 +18,7 @@
   },
   "build": {
     "appId": "com.samiryasar.aiusagehub",
-    "productName": "AI Usage Hub",
+    "productName": "Soar AI Tracker",
     "directories": {
       "output": "release"
     },

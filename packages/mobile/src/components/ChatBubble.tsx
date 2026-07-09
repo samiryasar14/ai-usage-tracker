@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
   rowAssistant: { alignItems: "flex-start" },
   label: { color: "#8a8a8a", fontSize: 11, marginBottom: 4, marginHorizontal: 2 },
   bubble: { maxWidth: "82%", borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10 },
-  bubbleUser: { backgroundColor: "#2a78d6", borderBottomRightRadius: 4 },
+  bubbleUser: { backgroundColor: "#22d3ee", borderBottomRightRadius: 4 },
   bubbleAssistant: {
     backgroundColor: "#1a1a19",
     borderWidth: 1,

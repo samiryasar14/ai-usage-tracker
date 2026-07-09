@@ -13,7 +13,7 @@ export function Nav({ dark, onToggleDark }: NavProps) {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <a href="#top" className="flex items-center gap-2">
           <Logo size={26} />
-          <span className="text-sm font-semibold tracking-tight text-text-primary">AI Usage Hub</span>
+          <span className="text-sm font-semibold tracking-tight text-text-primary">Soar AI Tracker</span>
         </a>
 
         <div className="flex items-center gap-2">

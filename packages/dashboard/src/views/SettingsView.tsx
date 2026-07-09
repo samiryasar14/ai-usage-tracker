@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { DatabaseBackup, FolderOpen, Smartphone, UserCircle } from "lucide-react";
+import { DatabaseBackup, FolderOpen, Plug, Smartphone, UserCircle } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import type { ComponentType, ReactNode } from "react";
 import { api, type PairingSession } from "../api";
@@ -42,6 +42,40 @@ export function SettingsView() {
   const backupDatabase = useMutation({
     mutationFn: () => window.electronAPI!.backupDatabase(),
     onSuccess: (result) => setBackupMessage(result.ok ? "Backup saved." : result.error),
+  });
+
+  const [openaiKeyDraft, setOpenaiKeyDraft] = useState("");
+  const [openaiMessage, setOpenaiMessage] = useState<string | null>(null);
+
+  const hasOpenAIKey = useQuery({
+    queryKey: ["hasOpenAIKey"],
+    queryFn: () => window.electronAPI!.hasOpenAIKey(),
+    enabled: isElectron,
+  });
+
+  const saveOpenAIKey = useMutation({
+    mutationFn: (key: string) => window.electronAPI!.saveOpenAIKey(key),
+    onSuccess: (result) => {
+      setOpenaiMessage(
+        result.ok ? "Saved. Restart the app for this to take effect." : (result.error ?? "Failed to save the key."),
+      );
+      if (result.ok) {
+        setOpenaiKeyDraft("");
+        queryClient.invalidateQueries({ queryKey: ["hasOpenAIKey"] });
+      }
+    },
+  });
+
+  const clearOpenAIKey = useMutation({
+    mutationFn: () => window.electronAPI!.clearOpenAIKey(),
+    onSuccess: (result) => {
+      setOpenaiMessage(
+        result.ok
+          ? "Disconnected. Restart the app for this to take effect."
+          : (result.error ?? "Failed to disconnect."),
+      );
+      if (result.ok) queryClient.invalidateQueries({ queryKey: ["hasOpenAIKey"] });
+    },
   });
 
   const [pairingSession, setPairingSession] = useState<PairingSession | null>(null);
@@ -234,6 +268,70 @@ export function SettingsView() {
               Open Data Folder
             </button>
             {backupMessage && <span className="text-sm text-text-muted">{backupMessage}</span>}
+          </div>
+        </section>
+      )}
+
+      {isElectron && (
+        <section className="mt-8 rounded-lg border border-hairline bg-surface p-5">
+          <SectionHeading icon={Plug}>Providers</SectionHeading>
+          <div className="mt-3">
+            {hasOpenAIKey.data ? (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium text-text-primary">OpenAI connected</div>
+                  <div className="text-sm text-text-muted">
+                    Usage and cost data will be pulled from OpenAI&apos;s organization API.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpenaiMessage(null);
+                    clearOpenAIKey.mutate();
+                  }}
+                  disabled={clearOpenAIKey.isPending}
+                  className="rounded-md border border-hairline px-3 py-1.5 text-sm font-medium text-text-primary transition-colors hover:bg-plane focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50"
+                >
+                  {clearOpenAIKey.isPending ? "Disconnecting…" : "Disconnect"}
+                </button>
+              </div>
+            ) : (
+              <form
+                className="flex flex-col gap-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setOpenaiMessage(null);
+                  saveOpenAIKey.mutate(openaiKeyDraft.trim());
+                }}
+              >
+                <div className="text-sm text-text-secondary">
+                  Connect OpenAI to pull usage and cost data alongside Claude Code.
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <input
+                    type="password"
+                    value={openaiKeyDraft}
+                    onChange={(e) => setOpenaiKeyDraft(e.target.value)}
+                    placeholder="sk-admin-..."
+                    autoComplete="off"
+                    className="w-64 rounded-md border border-hairline bg-transparent px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!openaiKeyDraft.trim() || saveOpenAIKey.isPending}
+                    className="rounded-md bg-text-primary px-3 py-1.5 text-sm font-medium text-surface transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50"
+                  >
+                    {saveOpenAIKey.isPending ? "Connecting…" : "Connect"}
+                  </button>
+                </div>
+                <p className="text-sm text-text-muted">
+                  Requires an <span className="font-medium text-text-secondary">Admin</span> API key from your
+                  OpenAI organization settings — a regular API key won&apos;t work.
+                </p>
+              </form>
+            )}
+            {openaiMessage && <p className="mt-3 text-sm text-text-muted">{openaiMessage}</p>}
           </div>
         </section>
       )}

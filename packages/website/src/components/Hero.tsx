@@ -28,7 +28,7 @@ export function Hero() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-balance text-lg text-text-secondary sm:text-xl">
-            AI Usage Hub watches your Claude Code usage in real time, tracks spend down to the session and project,
+            Soar AI Tracker watches your Claude Code usage in real time, tracks spend down to the session and project,
             forecasts your monthly bill, and warns you before the bill surprises you — all without a single byte
             leaving your machine.
           </p>

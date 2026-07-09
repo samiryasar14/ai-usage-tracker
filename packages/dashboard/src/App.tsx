@@ -1,18 +1,20 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LayoutDashboard, FolderKanban, Sparkles, Settings, Moon, Sun } from "lucide-react";
+import { LayoutDashboard, FolderKanban, History, Sparkles, Settings, Moon, Sun } from "lucide-react";
 import { api, connectRefreshSocket } from "./api";
 import { Logo } from "./components/Logo";
 import { DashboardView } from "./views/DashboardView";
 import { ProjectsView } from "./views/ProjectsView";
+import { ActivityView } from "./views/ActivityView";
 import { AssistantView } from "./views/AssistantView";
 import { SettingsView } from "./views/SettingsView";
 
-type Tab = "dashboard" | "projects" | "assistant" | "settings";
+type Tab = "dashboard" | "projects" | "activity" | "assistant" | "settings";
 
 const TABS: Array<{ key: Tab; label: string; icon: typeof LayoutDashboard }> = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "projects", label: "Projects", icon: FolderKanban },
+  { key: "activity", label: "Activity", icon: History },
   { key: "assistant", label: "AI Assistant", icon: Sparkles },
   { key: "settings", label: "Settings", icon: Settings },
 ];
@@ -64,7 +66,7 @@ export function App() {
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
               <Logo size={22} />
-              <span className="text-sm font-semibold text-text-primary">AI Usage Hub</span>
+              <span className="text-sm font-semibold text-text-primary">Soar AI Tracker</span>
             </div>
             <nav className="flex items-center gap-1">
               {TABS.map(({ key, label, icon: Icon }) => (
@@ -113,7 +115,7 @@ export function App() {
 
         {overview.isError && (
           <div className="mb-4 flex items-center justify-between rounded-lg border border-red-400/40 bg-red-400/10 px-4 py-3 text-sm text-red-600">
-            <span>Couldn&apos;t reach the AI Usage Hub server. Is it running?</span>
+            <span>Couldn&apos;t reach the Soar AI Tracker server. Is it running?</span>
             <button type="button" onClick={() => queryClient.invalidateQueries()} className="ml-4 font-medium">
               Retry
             </button>
@@ -131,6 +133,7 @@ export function App() {
 
         {tab === "dashboard" && <DashboardView />}
         {tab === "projects" && <ProjectsView />}
+        {tab === "activity" && <ActivityView />}
         {tab === "assistant" && <AssistantView />}
         {tab === "settings" && <SettingsView />}
       </div>

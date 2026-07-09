@@ -1,6 +1,7 @@
 import { randomBytes, randomInt, createHash } from "node:crypto";
 import { networkInterfaces } from "node:os";
 import { getDb } from "@ai-usage-tracker/db";
+import { logActivity } from "./activity.js";
 
 const CODE_TTL_MS = 10 * 60 * 1000;
 
@@ -60,9 +61,11 @@ export async function claimPairing(code: string, deviceName: string) {
 
   const token = randomBytes(32).toString("base64url");
   const db = getDb();
+  const name = deviceName || "Mobile device";
   await db.pairedDevice.create({
-    data: { name: deviceName || "Mobile device", tokenHash: hashToken(token) },
+    data: { name, tokenHash: hashToken(token) },
   });
+  await logActivity("device_paired", `Paired device "${name}"`);
 
   // Only time the raw token is ever available — callers must persist it themselves.
   return { token };
@@ -83,5 +86,9 @@ export async function listPairedDevices() {
 
 export async function revokeDevice(id: string): Promise<void> {
   const db = getDb();
+  const device = await db.pairedDevice.findUnique({ where: { id } });
   await db.pairedDevice.delete({ where: { id } });
+  if (device) {
+    await logActivity("device_revoked", `Revoked device "${device.name}"`);
+  }
 }

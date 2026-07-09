@@ -65,7 +65,7 @@ export function PairingScreen({ onPaired }: PairingScreenProps) {
     if (!scanning) return;
     const parsed = parsePairingUrl(result.data);
     if (!parsed) {
-      setError("That QR code isn't a valid AI Usage Hub pairing code.");
+      setError("That QR code isn't a valid Soar AI Tracker pairing code.");
       return;
     }
     setScanning(false);
@@ -74,9 +74,9 @@ export function PairingScreen({ onPaired }: PairingScreenProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Pair with AI Usage Hub</Text>
+      <Text style={styles.title}>Pair with Soar AI Tracker</Text>
       <Text style={styles.subtitle}>
-        Open AI Usage Hub on your desktop, go to Settings → Pair a Mobile Device, and scan the code shown — or
+        Open Soar AI Tracker on your desktop, go to Settings → Pair a Mobile Device, and scan the code shown — or
         enter it below. Your phone and desktop need to be on the same WiFi network.
       </Text>
 
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   button: {
-    backgroundColor: "#2a78d6",
+    backgroundColor: "#22d3ee",
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: "center",

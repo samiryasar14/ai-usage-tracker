@@ -2,8 +2,12 @@ import { basename } from "node:path";
 import { getDb } from "@ai-usage-tracker/db";
 import { computeCost, getModelPricing, type NormalizedUsageRecord } from "@ai-usage-tracker/shared";
 import { ClaudeCodePlugin } from "@ai-usage-tracker/plugin-claude-code";
+import { OpenAIPlugin } from "@ai-usage-tracker/plugin-openai";
 
-const plugins = [new ClaudeCodePlugin()];
+// OpenAIPlugin is included unconditionally — its fetchUsage() already no-ops
+// safely (returns []) when OPENAI_ADMIN_API_KEY isn't configured, so there's no
+// need to gate it here.
+const plugins = [new ClaudeCodePlugin(), new OpenAIPlugin()];
 
 // Warn at most once per unpriced model per process lifetime, not once per request.
 const warnedUnpricedModels = new Set<string>();
@@ -67,7 +71,7 @@ export async function persistRecords(records: NormalizedUsageRecord[]): Promise<
       },
     });
 
-    const cost = pricing ? computeCost(pricing, record) : 0;
+    const cost = record.precomputedCostUsd ?? (pricing ? computeCost(pricing, record) : 0);
 
     const result = await db.request.upsert({
       where: { externalId: record.externalId },

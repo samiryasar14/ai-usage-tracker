@@ -77,7 +77,7 @@ export function ProjectDetail({ project, onBack }: ProjectDetailProps) {
 const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 40 },
   backButton: { marginBottom: 16 },
-  backText: { color: "#2a78d6", fontSize: 14, fontWeight: "600" },
+  backText: { color: "#22d3ee", fontSize: 14, fontWeight: "600" },
   name: { color: "#fff", fontSize: 20, fontWeight: "700" },
   path: { color: "#8a8a8a", fontSize: 12, marginTop: 4, marginBottom: 16 },
   statsGrid: {

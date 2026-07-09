@@ -52,7 +52,16 @@ export function Timeline({ data }: TimelineProps) {
         type: "bar",
         data: data.map((d) => d.tokens),
         barMaxWidth: 24,
-        itemStyle: { color: seriesColor, borderRadius: [4, 4, 0, 0] },
+        itemStyle: {
+          color: seriesColor,
+          borderRadius: [4, 4, 0, 0],
+          shadowBlur: 12,
+          shadowColor: seriesColor,
+          shadowOffsetY: 2,
+        },
+        emphasis: {
+          itemStyle: { shadowBlur: 20, shadowColor: seriesColor },
+        },
       },
     ],
   };

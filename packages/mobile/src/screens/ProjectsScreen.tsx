@@ -38,7 +38,7 @@ export function ProjectsScreen() {
         data={projectsQuery.data ?? []}
         keyExtractor={(item) => item.projectId}
         contentContainerStyle={styles.listContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2a78d6" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#22d3ee" />}
         ListHeaderComponent={<Text style={styles.pageTitle}>Projects</Text>}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         renderItem={({ item }: { item: ProjectAnalyticsRow }) => (

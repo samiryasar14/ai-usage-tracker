@@ -1,4 +1,4 @@
-# AI Usage Hub — Roadmap
+# Soar AI Tracker — Roadmap
 
 Current state: Phase 1 core is more complete than the original scaffold notes suggest — ingestion, dashboard, monthly budget alerts, subscriptions CRUD, a naive forecast, and CSV/JSON export all already work end-to-end for the single Claude Code plugin. This roadmap covers the next phases: hardening it into a shippable product, expanding provider coverage, and adding the "advanced" intelligence features the vision doc calls for.
 

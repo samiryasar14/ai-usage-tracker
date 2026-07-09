@@ -41,7 +41,7 @@ export function ProductVisual() {
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
           <div className="ml-3 flex items-center gap-1 text-xs font-medium text-text-secondary">
             <LayoutDashboard size={13} />
-            AI Usage Hub — Dashboard
+            Soar AI Tracker — Dashboard
           </div>
         </div>
 
@@ -87,6 +87,7 @@ export function ProductVisual() {
                     style={{
                       height: `${height}%`,
                       background: "linear-gradient(to top, var(--series-1), var(--series-2))",
+                      boxShadow: "0 0 12px -2px var(--series-1)",
                       animationDelay: `${i * 60}ms`,
                       opacity: 0.85,
                     }}

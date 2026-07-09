@@ -53,7 +53,7 @@ export function Features() {
           Everything you need to stay ahead of the bill
         </h2>
         <p className="mt-4 text-lg text-text-secondary">
-          AI Usage Hub turns scattered log files into a clear picture of what you're actually spending.
+          Soar AI Tracker turns scattered log files into a clear picture of what you're actually spending.
         </p>
       </div>
 

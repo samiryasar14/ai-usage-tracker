@@ -54,7 +54,7 @@ export function AssistantScreen() {
         <View style={styles.listArea}>
           {messagesQuery.isLoading ? (
             <View style={styles.centered}>
-              <ActivityIndicator color="#2a78d6" />
+              <ActivityIndicator color="#22d3ee" />
             </View>
           ) : messagesQuery.isError ? (
             <View style={styles.centered}>
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   sendButton: {
-    backgroundColor: "#2a78d6",
+    backgroundColor: "#22d3ee",
     borderRadius: 8,
     paddingHorizontal: 18,
     paddingVertical: 12,

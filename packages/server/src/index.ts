@@ -18,6 +18,10 @@ import { getMonthlyCostForecast } from "./forecast.js";
 import { listAssistantMessages, answerAssistantQuestion } from "./assistant.js";
 import { getRecommendedProjectLimit } from "./recommendations.js";
 import { startPairing, claimPairing, verifyToken, listPairedDevices, revokeDevice } from "./pairing.js";
+import { listActivity } from "./activity.js";
+import { listTags, createTag, deleteTag, addTagToProject, removeTagFromProject } from "./tags.js";
+import { listProjectNotes, addProjectNote, deleteNote } from "./notes.js";
+import { listSavedViews, createSavedView, deleteSavedView } from "./savedViews.js";
 
 const PORT = Number(process.env.PORT ?? 4317);
 const INGEST_INTERVAL_MS = 10_000;
@@ -166,6 +170,63 @@ app.delete<{ Params: { id: string } }>("/api/pairing/devices/:id", async (req, r
   reply.code(204);
 });
 
+app.get<{ Querystring: { limit?: string } }>("/api/activity", async (req) => {
+  return listActivity(Number(req.query.limit ?? 50));
+});
+
+app.get("/api/tags", async () => listTags());
+
+app.post<{ Body: { name: string; color: string } }>("/api/tags", async (req, reply) => {
+  const tag = await createTag(req.body.name, req.body.color);
+  reply.code(201);
+  return tag;
+});
+
+app.delete<{ Params: { id: string } }>("/api/tags/:id", async (req, reply) => {
+  await deleteTag(req.params.id);
+  reply.code(204);
+});
+
+app.post<{ Params: { id: string; tagId: string } }>("/api/projects/:id/tags/:tagId", async (req, reply) => {
+  await addTagToProject(req.params.id, req.params.tagId);
+  reply.code(204);
+});
+
+app.delete<{ Params: { id: string; tagId: string } }>("/api/projects/:id/tags/:tagId", async (req, reply) => {
+  await removeTagFromProject(req.params.id, req.params.tagId);
+  reply.code(204);
+});
+
+app.get<{ Params: { id: string } }>("/api/projects/:id/notes", async (req) => {
+  return listProjectNotes(req.params.id);
+});
+
+app.post<{ Params: { id: string }; Body: { content: string } }>("/api/projects/:id/notes", async (req, reply) => {
+  const note = await addProjectNote(req.params.id, req.body.content);
+  reply.code(201);
+  return note;
+});
+
+app.delete<{ Params: { id: string } }>("/api/notes/:id", async (req, reply) => {
+  await deleteNote(req.params.id);
+  reply.code(204);
+});
+
+app.get<{ Querystring: { viewType?: string } }>("/api/saved-views", async (req) => {
+  return listSavedViews(req.query.viewType);
+});
+
+app.post<{ Body: { name: string; viewType: string; filterConfig: string } }>("/api/saved-views", async (req, reply) => {
+  const view = await createSavedView(req.body.name, req.body.viewType, req.body.filterConfig);
+  reply.code(201);
+  return view;
+});
+
+app.delete<{ Params: { id: string } }>("/api/saved-views/:id", async (req, reply) => {
+  await deleteSavedView(req.params.id);
+  reply.code(204);
+});
+
 const VALID_PERIODS: ReportPeriod[] = ["day", "week", "month"];
 
 app.get<{ Querystring: { period?: string; format?: string } }>("/api/reports/export", async (req, reply) => {
@@ -174,7 +235,7 @@ app.get<{ Querystring: { period?: string; format?: string } }>("/api/reports/exp
     : "month";
   const format = req.query.format === "json" ? "json" : "csv";
   const rows = await getReportRows(period);
-  const filename = `ai-usage-hub-${period}-report.${format}`;
+  const filename = `soar-ai-tracker-${period}-report.${format}`;
 
   reply.header("Content-Disposition", `attachment; filename="${filename}"`);
   if (format === "json") {
@@ -215,4 +276,4 @@ try {
 }
 
 await app.listen({ port: PORT, host: "0.0.0.0" });
-app.log.info(`AI Usage Hub server listening on http://127.0.0.1:${PORT} (and the LAN, for paired mobile devices)`);
+app.log.info(`Soar AI Tracker server listening on http://127.0.0.1:${PORT} (and the LAN, for paired mobile devices)`);

@@ -12,7 +12,7 @@ export function Download() {
 
         <div className="relative">
           <h2 className="text-3xl font-bold tracking-tight text-text-primary sm:text-4xl">
-            Get AI Usage Hub for Windows
+            Get Soar AI Tracker for Windows
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-text-secondary">
             Free, open source, and installs in under a minute. macOS and Linux builds are on the roadmap.

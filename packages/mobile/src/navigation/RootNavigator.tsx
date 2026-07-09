@@ -23,7 +23,7 @@ export function RootNavigator() {
   if (paired === undefined) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#0d0d0d" }}>
-        <ActivityIndicator color="#2a78d6" />
+        <ActivityIndicator color="#22d3ee" />
       </View>
     );
   }

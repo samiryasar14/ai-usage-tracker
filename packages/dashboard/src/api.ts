@@ -48,6 +48,7 @@ export interface ProjectAnalyticsRow {
   cost: number;
   sessions: number;
   lastActiveAt: string | null;
+  tags: Tag[];
 }
 
 export interface AlertRule {
@@ -126,6 +127,34 @@ export interface PairedDevice {
   lastSeenAt: string;
 }
 
+export interface ActivityEvent {
+  id: string;
+  type: string;
+  message: string;
+  createdAt: string;
+}
+
+export interface Tag {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface ProjectNote {
+  id: string;
+  projectId: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface SavedView {
+  id: string;
+  name: string;
+  viewType: string;
+  filterConfig: string;
+  createdAt: string;
+}
+
 async function getJson<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`);
   if (!res.ok) throw new Error(`${path} failed: ${res.status}`);
@@ -183,6 +212,21 @@ export const api = {
   startPairing: () => postJson<PairingSession>("/api/pairing/start", {}),
   pairedDevices: () => getJson<PairedDevice[]>("/api/pairing/devices"),
   revokeDevice: (id: string) => del(`/api/pairing/devices/${id}`),
+  activity: (limit = 50) => getJson<ActivityEvent[]>(`/api/activity?limit=${limit}`),
+  tags: () => getJson<Tag[]>("/api/tags"),
+  createTag: (name: string, color: string) => postJson<Tag>("/api/tags", { name, color }),
+  deleteTag: (id: string) => del(`/api/tags/${id}`),
+  addTagToProject: (projectId: string, tagId: string) =>
+    postJson<void>(`/api/projects/${projectId}/tags/${tagId}`, {}),
+  removeTagFromProject: (projectId: string, tagId: string) => del(`/api/projects/${projectId}/tags/${tagId}`),
+  projectNotes: (projectId: string) => getJson<ProjectNote[]>(`/api/projects/${projectId}/notes`),
+  addProjectNote: (projectId: string, content: string) =>
+    postJson<ProjectNote>(`/api/projects/${projectId}/notes`, { content }),
+  deleteNote: (id: string) => del(`/api/notes/${id}`),
+  savedViews: (viewType: string) => getJson<SavedView[]>(`/api/saved-views?viewType=${viewType}`),
+  createSavedView: (name: string, viewType: string, filterConfig: string) =>
+    postJson<SavedView>("/api/saved-views", { name, viewType, filterConfig }),
+  deleteSavedView: (id: string) => del(`/api/saved-views/${id}`),
 };
 
 interface SocketHandlers {

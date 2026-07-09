@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#232320",
     overflow: "hidden",
   },
-  barFill: { height: "100%", backgroundColor: "#2a78d6", borderRadius: 3 },
+  barFill: { height: "100%", backgroundColor: "#22d3ee", borderRadius: 3 },
   meta: { color: "#8a8a8a", fontSize: 11, marginTop: 5 },
   empty: { color: "#8a8a8a", fontSize: 13 },
 });

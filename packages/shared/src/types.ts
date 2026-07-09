@@ -16,6 +16,12 @@ export interface NormalizedUsageRecord {
   cacheCreationTokens: number;
   /** True for subagent/Task-tool turns, as opposed to the user-facing conversation. */
   isSidechain: boolean;
+  /**
+   * When a provider's API already returns cost in USD directly (e.g. OpenAI's
+   * usage/cost endpoints), set this instead of relying on the local pricing
+   * table — ingest.ts uses it in place of computeCost() when present.
+   */
+  precomputedCostUsd?: number;
 }
 
 export interface ProviderPlugin {

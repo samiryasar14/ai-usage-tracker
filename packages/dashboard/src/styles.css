@@ -2,26 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* "Command center" palette: dense, high-contrast, cyan-glow accent — tuned
+   primarily for the dark theme (glow effects need a dark backdrop to read),
+   with a cooler-toned light theme that still shares the same accent family. */
 :root {
   --surface-1: #fcfcfb;
-  --page-plane: #f9f9f7;
-  --text-primary: #0b0b0b;
-  --text-secondary: #52514e;
-  --text-muted: #898781;
-  --hairline: #e1e0d9;
-  --baseline: #c3c2b7;
-  --series-1: #2a78d6;
+  --page-plane: #f7f8fa;
+  --text-primary: #0a0b0d;
+  --text-secondary: #4b5563;
+  --text-muted: #8b93a1;
+  --hairline: #e2e5eb;
+  --baseline: #c7ccd6;
+  --series-1: #0ea5c4;
 }
 
 .dark {
-  --surface-1: #1a1a19;
-  --page-plane: #0d0d0d;
-  --text-primary: #ffffff;
-  --text-secondary: #c3c2b7;
-  --text-muted: #898781;
-  --hairline: #2c2c2a;
-  --baseline: #383835;
-  --series-1: #3987e5;
+  --surface-1: #0d0f16;
+  --page-plane: #050609;
+  --text-primary: #f2f5fb;
+  --text-secondary: #9aa4bb;
+  --text-muted: #5c6478;
+  --hairline: #1b2030;
+  --baseline: #2a3145;
+  --series-1: #22d3ee;
 }
 
 body {
