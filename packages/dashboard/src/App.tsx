@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LayoutDashboard, FolderKanban, History, Sparkles, Settings, Moon, Sun } from "lucide-react";
-import { api, connectRefreshSocket } from "./api";
+import { api, connectRefreshSocket, type Settings as SettingsMap } from "./api";
 import { Logo } from "./components/Logo";
 import { NewsPanel } from "./components/NewsPanel";
 import { ResizablePanel } from "./components/ResizablePanel";
@@ -43,13 +43,21 @@ export function App() {
   const [socketConnected, setSocketConnected] = useState(true);
   const { dark, toggle: toggleDark } = useDarkMode();
 
+  // Same React Query cache key as the copy fetched inside SettingsView, so
+  // this doesn't cause an extra request — just gives onAlert below a synchronous
+  // way to read the current preference via queryClient.getQueryData.
+  useQuery({ queryKey: ["settings"], queryFn: api.settings });
+
   useEffect(() => {
     return connectRefreshSocket({
       onRefresh: () => queryClient.invalidateQueries(),
       onAlert: (message) => {
         setToast(message);
         queryClient.invalidateQueries({ queryKey: ["alertEvents"] });
-        void window.electronAPI?.showNotification?.("Soar AI Tracker", message);
+        const settings = queryClient.getQueryData<SettingsMap>(["settings"]);
+        if (settings?.notifyOnBudgetAlert !== "false") {
+          void window.electronAPI?.showNotification?.("Soar AI Tracker", message);
+        }
       },
       onConnectionChange: setSocketConnected,
     });

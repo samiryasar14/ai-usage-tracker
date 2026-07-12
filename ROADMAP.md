@@ -12,25 +12,23 @@ Resolved — sidechain/subagent turns are now excluded from every cost/token agg
 
 Goal: a real installable desktop app, not a dev-mode-only tool.
 
-- **Bundle the server** — replace `desktop/src/main.cjs` spawning `tsx src/index.ts` at runtime with a compiled/bundled server (esbuild → single JS file) shipped alongside the app. Runtime `tsx` + raw TS source is not viable for a packaged installer.
-- **electron-builder setup** — add build config (NSIS installer for Windows to match this dev machine, plus DMG/AppImage targets) at the root or `packages/desktop`. Wire `pnpm build:desktop` → installer output.
-- **Auto-update** — `electron-updater` pointed at GitHub Releases (repo already exists at `sysamiryasar/soar-ai-tracker`) so future versions push without manual reinstalls.
-- **App icon & installer branding** — currently none; needed for a credible installer.
+Done: server bundling, electron-builder + NSIS installer, app icon, auto-update via `electron-updater`/GitHub Releases, and native update notifications. DB already lives in Electron's `userData` dir, with a "Backup Database" / "Open Data Folder" pair in Settings.
+
 - **Code signing** — flag only: Windows/macOS signing needs certificates/Apple dev account the user will need to obtain; unsigned builds will trigger SmartScreen/Gatekeeper warnings. Note this as a known limitation until certs are available, not a blocker to shipping.
-- **Data location & backup** — SQLite DB path should live in Electron's `userData` dir (confirm `DATABASE_URL` resolves there, not the repo checkout); add a simple export/import of the DB file for backup before upgrades.
 
 ## Phase B — UX polish & completeness (parallel with A)
 
 Goal: close the gaps the audit found so the app feels finished, not a scaffold.
 
-- **Loading/error states** — skeleton or spinner states, retry affordance on fetch failure, for every panel.
-- **Table interactivity** — click-to-sort headers on Model Leaderboard, Session History, Projects Table; a search/filter box; pagination or "load more" on Session History (currently a hard `limit=50` with no way to see older sessions).
-- **Dark mode toggle** — currently OS-preference-only (`prefers-color-scheme`, no manual override). Add an in-app toggle persisted to local storage.
-- **Settings page** — first real settings surface: data retention window, alert notification preferences, provider enable/disable (ties into Phase C), export defaults. New route/view — app currently has no routing at all (`App.tsx` is one scrolling column), so this also means introducing basic view-switching.
-- **Onboarding / first-run flow** — detect whether `~/.claude/projects` exists and has data; if not, show a short walkthrough instead of an all-empty dashboard.
-- **Alert acknowledgement** — `AlertEvent.acknowledgedAt` already exists in the schema but nothing sets it. Add an "Acknowledge" button in `BudgetPanel.tsx` and a `PATCH` endpoint.
-- **Subscription editing** — `SubscriptionsPanel.tsx` only supports add/delete today; add in-place edit and a status control (active/cancelled) since the API model already supports `status`.
-- **Project drill-down** — clicking a project in `ProjectsTable` currently does nothing; add a detail view showing that project's session/cost history.
+Done:
+- **Loading/error states** — every panel backed by a query (Model Leaderboard, Session History, Projects Table, Budget Alerts, Subscriptions, Activity) now shows a loading state and a retry-on-error banner via the shared `QueryState` component.
+- **Table interactivity** — click-to-sort headers on Model Leaderboard, Session History, and Projects Table (`useSortableRows` + `SortableTh`); a filter box on Model Leaderboard and Session History; "Load more" pagination on Session History.
+- **Dark mode toggle** — already done (manual toggle in the sidebar, persisted to `localStorage`).
+- **Settings page** — already had routing/view-switching (the roadmap note above was stale). Added: data retention window (with actual server-side pruning, off by default), a budget-alert notification toggle, export defaults (period/format), and a Connected Providers list.
+- **Onboarding / first-run flow** — `Onboarding.tsx` replaces the dashboard when there's no usage data at all, explaining what the app watches for.
+- **Alert acknowledgement** — `PATCH /api/alerts/events/:id/acknowledge` + an "Acknowledge" button in `BudgetPanel.tsx`.
+- **Subscription editing** — in-place edit (name/cost/renewal day/status) in `SubscriptionsPanel.tsx`, backed by the existing `PUT /api/subscriptions/:id`.
+- **Project drill-down** — already done (`ProjectDetail.tsx`, the roadmap note above was stale).
 
 ## Phase C — More provider plugins
 
@@ -74,7 +72,7 @@ Goal: use the fact this is a real desktop app, not just a web page in a window.
 
 Lower priority — flagging so they're not forgotten, not because they're urgent:
 
-- **Data retention/archival** — `Request` table grows unbounded with no pruning; fine for a while, but worth a retention policy (e.g. aggregate-and-drop rows older than N months) before it becomes a real problem.
+- **Data retention/archival** — a user-configurable retention window now exists (Settings → "Keep detailed request history for", default "Forever") with real pruning on each ingestion cycle. Still open: aggregate-and-archive (rather than hard-delete) older rows, so long-term trend charts survive a short retention window.
 - **Multi-device sync** — explicitly out of scope unless requested later; the local-first single-machine design (`IngestCursor` keyed by absolute file path) is a deliberate simplicity choice, not an oversight. Only revisit if cross-machine dashboards become a real need.
 
 ## Suggested sequencing

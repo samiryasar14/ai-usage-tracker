@@ -1,7 +1,18 @@
-import { Bug, Sparkles, Wrench } from "lucide-react";
+import { Bug, ListChecks, Sparkles, Wrench } from "lucide-react";
 import { Reveal } from "./Reveal";
 
 const RELEASES = [
+  {
+    version: "v0.3.0",
+    date: "July 12, 2026",
+    changes: [
+      { icon: Wrench, text: "Fixed subagent turns being double-counted in cost and token totals across the whole app." },
+      { icon: ListChecks, text: "Every panel now shows a loading state and a retry banner on fetch failure." },
+      { icon: Sparkles, text: "Sortable, filterable tables — Model Leaderboard, Session History, and Projects — plus Load More on Session History." },
+      { icon: Sparkles, text: "Budget alert acknowledgement, in-place subscription editing, and an expanded Settings page (data retention, notifications, export defaults)." },
+      { icon: Sparkles, text: "A first-run empty state for new installs with no usage data yet." },
+    ],
+  },
   {
     version: "v0.2.0",
     date: "July 11, 2026",

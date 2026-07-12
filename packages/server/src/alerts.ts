@@ -46,6 +46,11 @@ export async function getAlertEvents(limit: number) {
   });
 }
 
+export async function acknowledgeAlertEvent(id: string) {
+  const db = getDb();
+  return db.alertEvent.update({ where: { id }, data: { acknowledgedAt: new Date() } });
+}
+
 // Fraction of the budget that counts as "approaching" — a softer heads-up
 // before the hard exceeded alert.
 const APPROACHING_THRESHOLD_RATIO = 0.8;

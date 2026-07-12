@@ -7,9 +7,11 @@ interface BudgetPanelProps {
   events: AlertEvent[];
   onSave: (thresholdUsd: number, enabled: boolean) => void;
   saving: boolean;
+  onAcknowledge: (id: string) => void;
+  acknowledgingId: string | null;
 }
 
-export function BudgetPanel({ rule, events, onSave, saving }: BudgetPanelProps) {
+export function BudgetPanel({ rule, events, onSave, saving, onAcknowledge, acknowledgingId }: BudgetPanelProps) {
   const [threshold, setThreshold] = useState(rule?.thresholdUsd ?? 100);
   const [enabled, setEnabled] = useState(rule?.enabled ?? true);
 
@@ -67,9 +69,28 @@ export function BudgetPanel({ rule, events, onSave, saving }: BudgetPanelProps) 
 
       <ul className="mt-4 space-y-2">
         {events.map((event) => (
-          <li key={event.id} className="rounded-md border border-hairline px-3 py-2 text-sm text-text-primary">
-            <span className="text-text-secondary">{new Date(event.triggeredAt).toLocaleString()} — </span>
-            {event.message}
+          <li
+            key={event.id}
+            className={`flex items-center justify-between gap-3 rounded-md border border-hairline px-3 py-2 text-sm text-text-primary ${
+              event.acknowledgedAt ? "opacity-60" : ""
+            }`}
+          >
+            <span>
+              <span className="text-text-secondary">{new Date(event.triggeredAt).toLocaleString()} — </span>
+              {event.message}
+            </span>
+            {event.acknowledgedAt ? (
+              <span className="shrink-0 text-xs text-text-muted">Acknowledged</span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onAcknowledge(event.id)}
+                disabled={acknowledgingId === event.id}
+                className="shrink-0 rounded-sm text-xs text-text-muted transition-colors hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50"
+              >
+                {acknowledgingId === event.id ? "Acknowledging…" : "Acknowledge"}
+              </button>
+            )}
           </li>
         ))}
         {events.length === 0 && (

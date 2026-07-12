@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
@@ -20,7 +21,11 @@ import { SessionHistory } from "../components/SessionHistory";
 import { BudgetPanel } from "../components/BudgetPanel";
 import { SubscriptionsPanel } from "../components/SubscriptionsPanel";
 import { ReportsPanel } from "../components/ReportsPanel";
+import { QueryState } from "../components/QueryState";
+import { Onboarding } from "../components/Onboarding";
 import { formatCompact, formatCount, formatCurrency } from "../format";
+
+const SESSIONS_PAGE_SIZE = 50;
 
 interface SectionHeadingProps {
   icon: ComponentType<{ size?: string | number; className?: string }>;
@@ -38,11 +43,16 @@ function SectionHeading({ icon: Icon, children }: SectionHeadingProps) {
 
 export function DashboardView() {
   const queryClient = useQueryClient();
+  const [sessionsLimit, setSessionsLimit] = useState(SESSIONS_PAGE_SIZE);
 
   const overview = useQuery({ queryKey: ["overview"], queryFn: api.overview, refetchInterval: 15_000 });
   const timeline = useQuery({ queryKey: ["timeline"], queryFn: () => api.timeline(30), refetchInterval: 15_000 });
   const models = useQuery({ queryKey: ["models"], queryFn: api.models, refetchInterval: 15_000 });
-  const sessions = useQuery({ queryKey: ["sessions"], queryFn: () => api.sessions(50), refetchInterval: 15_000 });
+  const sessions = useQuery({
+    queryKey: ["sessions", sessionsLimit],
+    queryFn: () => api.sessions(sessionsLimit),
+    refetchInterval: 15_000,
+  });
   const alertRules = useQuery({ queryKey: ["alertRules"], queryFn: api.alertRules });
   const alertEvents = useQuery({ queryKey: ["alertEvents"], queryFn: () => api.alertEvents(10) });
   const forecast = useQuery({ queryKey: ["forecast"], queryFn: api.forecast, refetchInterval: 15_000 });
@@ -54,8 +64,19 @@ export function DashboardView() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["alertRules"] }),
   });
 
+  const acknowledgeAlert = useMutation({
+    mutationFn: api.acknowledgeAlertEvent,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["alertEvents"] }),
+  });
+
   const addSubscription = useMutation({
     mutationFn: api.createSubscription,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["subscriptions"] }),
+  });
+
+  const updateSubscription = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: Parameters<typeof api.updateSubscription>[1] }) =>
+      api.updateSubscription(id, input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["subscriptions"] }),
   });
 
@@ -65,6 +86,11 @@ export function DashboardView() {
   });
 
   const monthlyBudgetRule = alertRules.data?.find((r) => r.type === "monthly_budget");
+
+  const hasAnyData = (overview.data?.modelsUsed ?? 0) > 0 || (sessions.data?.length ?? 0) > 0;
+  if (!overview.isLoading && !overview.isError && !hasAnyData) {
+    return <Onboarding />;
+  }
 
   return (
     <div>
@@ -109,14 +135,31 @@ export function DashboardView() {
         <section className="rounded-lg border border-hairline bg-surface p-5">
           <SectionHeading icon={Trophy}>Model leaderboard</SectionHeading>
           <div className="mt-3">
-            <ModelLeaderboard rows={models.data ?? []} />
+            <QueryState
+              isLoading={models.isLoading}
+              isError={models.isError}
+              onRetry={() => models.refetch()}
+            >
+              <ModelLeaderboard rows={models.data ?? []} />
+            </QueryState>
           </div>
         </section>
 
         <section className="rounded-lg border border-hairline bg-surface p-5">
           <SectionHeading icon={History}>Recent sessions</SectionHeading>
           <div className="mt-3 max-h-96 overflow-y-auto">
-            <SessionHistory rows={sessions.data ?? []} />
+            <QueryState
+              isLoading={sessions.isLoading}
+              isError={sessions.isError}
+              onRetry={() => sessions.refetch()}
+            >
+              <SessionHistory
+                rows={sessions.data ?? []}
+                onLoadMore={() => setSessionsLimit((n) => n + SESSIONS_PAGE_SIZE)}
+                hasMore={(sessions.data?.length ?? 0) >= sessionsLimit}
+                loadingMore={sessions.isFetching && !sessions.isLoading}
+              />
+            </QueryState>
           </div>
         </section>
       </div>
@@ -124,24 +167,43 @@ export function DashboardView() {
       <section className="mt-8 rounded-lg border border-hairline bg-surface p-5">
         <SectionHeading icon={Bell}>Budget alerts</SectionHeading>
         <div className="mt-3">
-          <BudgetPanel
-            rule={monthlyBudgetRule}
-            events={alertEvents.data ?? []}
-            saving={saveBudget.isPending}
-            onSave={(thresholdUsd, enabled) => saveBudget.mutate({ thresholdUsd, enabled })}
-          />
+          <QueryState
+            isLoading={alertRules.isLoading || alertEvents.isLoading}
+            isError={alertRules.isError || alertEvents.isError}
+            onRetry={() => {
+              alertRules.refetch();
+              alertEvents.refetch();
+            }}
+          >
+            <BudgetPanel
+              rule={monthlyBudgetRule}
+              events={alertEvents.data ?? []}
+              saving={saveBudget.isPending}
+              onSave={(thresholdUsd, enabled) => saveBudget.mutate({ thresholdUsd, enabled })}
+              onAcknowledge={(id) => acknowledgeAlert.mutate(id)}
+              acknowledgingId={acknowledgeAlert.isPending ? (acknowledgeAlert.variables ?? null) : null}
+            />
+          </QueryState>
         </div>
       </section>
 
       <section className="mt-8 rounded-lg border border-hairline bg-surface p-5">
         <SectionHeading icon={CreditCard}>Subscriptions</SectionHeading>
         <div className="mt-3">
-          <SubscriptionsPanel
-            subscriptions={subscriptions.data ?? []}
-            adding={addSubscription.isPending}
-            onAdd={(input) => addSubscription.mutate(input)}
-            onDelete={(id) => removeSubscription.mutate(id)}
-          />
+          <QueryState
+            isLoading={subscriptions.isLoading}
+            isError={subscriptions.isError}
+            onRetry={() => subscriptions.refetch()}
+          >
+            <SubscriptionsPanel
+              subscriptions={subscriptions.data ?? []}
+              adding={addSubscription.isPending}
+              onAdd={(input) => addSubscription.mutate(input)}
+              onUpdate={(id, input) => updateSubscription.mutate({ id, input })}
+              updatingId={updateSubscription.isPending ? (updateSubscription.variables?.id ?? null) : null}
+              onDelete={(id) => removeSubscription.mutate(id)}
+            />
+          </QueryState>
         </div>
       </section>
 

@@ -4,6 +4,7 @@ import { api } from "../api";
 import { DEFAULT_FILTER_CONFIG, FilterBar, type FilterConfig } from "../components/FilterBar";
 import { ProjectsTable } from "../components/ProjectsTable";
 import { ProjectDetail } from "../components/ProjectDetail";
+import { QueryState } from "../components/QueryState";
 
 export function ProjectsView() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -65,11 +66,13 @@ export function ProjectsView() {
           {filteredProjects.length} of {allProjects.length} projects
         </div>
         <div className="mt-3">
-          <ProjectsTable
-            rows={filteredProjects}
-            onSelect={setSelectedProjectId}
-            selectedProjectId={selectedProjectId}
-          />
+          <QueryState isLoading={projects.isLoading} isError={projects.isError} onRetry={() => projects.refetch()}>
+            <ProjectsTable
+              rows={filteredProjects}
+              onSelect={setSelectedProjectId}
+              selectedProjectId={selectedProjectId}
+            />
+          </QueryState>
         </div>
       </section>
 

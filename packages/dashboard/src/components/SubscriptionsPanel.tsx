@@ -6,13 +6,56 @@ interface SubscriptionsPanelProps {
   subscriptions: Subscription[];
   onAdd: (input: SubscriptionInput) => void;
   onDelete: (id: string) => void;
+  onUpdate: (id: string, input: Partial<SubscriptionInput>) => void;
   adding: boolean;
+  updatingId: string | null;
 }
 
-export function SubscriptionsPanel({ subscriptions, onAdd, onDelete, adding }: SubscriptionsPanelProps) {
+const cellInputClass =
+  "w-full rounded-md border border-hairline bg-transparent px-2 py-1 text-text-primary transition-colors focus:border-series-1 focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface";
+
+interface EditDraft {
+  name: string;
+  monthlyCostUsd: number;
+  renewalDay: number;
+  status: string;
+}
+
+export function SubscriptionsPanel({
+  subscriptions,
+  onAdd,
+  onDelete,
+  onUpdate,
+  adding,
+  updatingId,
+}: SubscriptionsPanelProps) {
   const [name, setName] = useState("");
   const [monthlyCostUsd, setMonthlyCostUsd] = useState(20);
   const [renewalDay, setRenewalDay] = useState(1);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<EditDraft | null>(null);
+
+  function startEdit(sub: Subscription) {
+    setEditingId(sub.id);
+    setDraft({
+      name: sub.name,
+      monthlyCostUsd: sub.monthlyCostUsd,
+      renewalDay: sub.renewalDay,
+      status: sub.status,
+    });
+  }
+
+  function saveEdit(id: string) {
+    if (!draft || !draft.name.trim()) return;
+    onUpdate(id, {
+      name: draft.name.trim(),
+      monthlyCostUsd: draft.monthlyCostUsd,
+      renewalDay: draft.renewalDay,
+      status: draft.status,
+    });
+    setEditingId(null);
+    setDraft(null);
+  }
 
   const activeTotal = subscriptions
     .filter((s) => s.status === "active")
@@ -81,28 +124,108 @@ export function SubscriptionsPanel({ subscriptions, onAdd, onDelete, adding }: S
           </tr>
         </thead>
         <tbody>
-          {subscriptions.map((sub) => (
-            <tr
-              key={sub.id}
-              className="border-b border-hairline transition-colors last:border-0 hover:bg-hairline/10"
-            >
-              <td className="py-2 text-text-primary">{sub.name}</td>
-              <td className="py-2 text-right tabular-nums text-text-primary">
-                {formatCurrency(sub.monthlyCostUsd)}
-              </td>
-              <td className="py-2 text-right tabular-nums text-text-secondary">Day {sub.renewalDay}</td>
-              <td className="py-2 text-text-secondary capitalize">{sub.status}</td>
-              <td className="py-2 text-right">
-                <button
-                  type="button"
-                  onClick={() => onDelete(sub.id)}
-                  className="rounded-sm text-xs text-text-muted transition-colors hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
-                >
-                  Remove
-                </button>
-              </td>
-            </tr>
-          ))}
+          {subscriptions.map((sub) => {
+            const isEditing = editingId === sub.id && draft;
+            if (isEditing && draft) {
+              return (
+                <tr key={sub.id} className="border-b border-hairline last:border-0">
+                  <td className="py-2">
+                    <input
+                      type="text"
+                      value={draft.name}
+                      onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                      className={cellInputClass}
+                      autoFocus
+                    />
+                  </td>
+                  <td className="py-2">
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={draft.monthlyCostUsd}
+                      onChange={(e) => setDraft({ ...draft, monthlyCostUsd: Number(e.target.value) })}
+                      className={`${cellInputClass} text-right`}
+                    />
+                  </td>
+                  <td className="py-2">
+                    <input
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={draft.renewalDay}
+                      onChange={(e) => setDraft({ ...draft, renewalDay: Number(e.target.value) })}
+                      className={`${cellInputClass} text-right`}
+                    />
+                  </td>
+                  <td className="py-2">
+                    <select
+                      value={draft.status}
+                      onChange={(e) => setDraft({ ...draft, status: e.target.value })}
+                      className={cellInputClass}
+                    >
+                      <option value="active">Active</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </td>
+                  <td className="py-2 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => saveEdit(sub.id)}
+                        disabled={updatingId === sub.id || !draft.name.trim()}
+                        className="rounded-sm text-xs font-medium text-series-1 transition-colors hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50"
+                      >
+                        {updatingId === sub.id ? "Saving…" : "Save"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingId(null);
+                          setDraft(null);
+                        }}
+                        className="rounded-sm text-xs text-text-muted transition-colors hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            }
+
+            return (
+              <tr
+                key={sub.id}
+                className="border-b border-hairline transition-colors last:border-0 hover:bg-hairline/10"
+              >
+                <td className="py-2 text-text-primary">{sub.name}</td>
+                <td className="py-2 text-right tabular-nums text-text-primary">
+                  {formatCurrency(sub.monthlyCostUsd)}
+                </td>
+                <td className="py-2 text-right tabular-nums text-text-secondary">Day {sub.renewalDay}</td>
+                <td className="py-2 text-text-secondary capitalize">{sub.status}</td>
+                <td className="py-2 text-right">
+                  <div className="flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => startEdit(sub)}
+                      className="rounded-sm text-xs text-text-muted transition-colors hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDelete(sub.id)}
+                      className="rounded-sm text-xs text-text-muted transition-colors hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
           {subscriptions.length === 0 && (
             <tr>
               <td colSpan={5} className="py-6 text-center text-sm text-text-muted">

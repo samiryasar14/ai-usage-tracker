@@ -155,6 +155,9 @@ export interface SavedView {
   createdAt: string;
 }
 
+export type SettingKey = "dataRetentionDays" | "notifyOnBudgetAlert" | "defaultReportPeriod" | "defaultReportFormat";
+export type Settings = Partial<Record<SettingKey, string>>;
+
 async function getJson<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`);
   if (!res.ok) throw new Error(`${path} failed: ${res.status}`);
@@ -164,6 +167,16 @@ async function getJson<T>(path: string): Promise<T> {
 async function putJson<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`${path} failed: ${res.status}`);
+  return res.json() as Promise<T>;
+}
+
+async function patchJson<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
@@ -209,9 +222,12 @@ export const api = {
   alertEvents: (limit = 20) => getJson<AlertEvent[]>(`/api/alerts/events?limit=${limit}`),
   setMonthlyBudget: (thresholdUsd: number, enabled: boolean) =>
     putJson<AlertRule>("/api/alerts/rules/monthly-budget", { thresholdUsd, enabled }),
+  acknowledgeAlertEvent: (id: string) => patchJson<AlertEvent>(`/api/alerts/events/${id}/acknowledge`, {}),
   forecast: () => getJson<MonthlyCostForecast>("/api/forecast"),
   subscriptions: () => getJson<Subscription[]>("/api/subscriptions"),
   createSubscription: (input: SubscriptionInput) => postJson<Subscription>("/api/subscriptions", input),
+  updateSubscription: (id: string, input: Partial<SubscriptionInput>) =>
+    putJson<Subscription>(`/api/subscriptions/${id}`, input),
   deleteSubscription: (id: string) => del(`/api/subscriptions/${id}`),
   assistantMessages: () => getJson<ChatMessageDto[]>("/api/assistant/messages"),
   sendAssistantMessage: (content: string) =>
@@ -238,6 +254,8 @@ export const api = {
   deleteSavedView: (id: string) => del(`/api/saved-views/${id}`),
   news: (limit = 20, force = false) =>
     getJson<NewsItem[]>(`/api/news?limit=${limit}${force ? "&force=1" : ""}`),
+  settings: () => getJson<Settings>("/api/settings"),
+  setSetting: (key: SettingKey, value: string) => putJson<Settings>(`/api/settings/${key}`, { value }),
 };
 
 interface SocketHandlers {

@@ -11,7 +11,13 @@ import {
   getSessionHistory,
   getProjectAnalytics,
 } from "./aggregations.js";
-import { getAlertRules, setMonthlyBudgetRule, getAlertEvents, checkBudgetAlerts } from "./alerts.js";
+import {
+  getAlertRules,
+  setMonthlyBudgetRule,
+  getAlertEvents,
+  acknowledgeAlertEvent,
+  checkBudgetAlerts,
+} from "./alerts.js";
 import { listSubscriptions, createSubscription, updateSubscription, deleteSubscription } from "./subscriptions.js";
 import { getReportRows, toCsv, type ReportPeriod } from "./reports.js";
 import { getMonthlyCostForecast } from "./forecast.js";
@@ -23,6 +29,7 @@ import { listTags, createTag, deleteTag, addTagToProject, removeTagFromProject }
 import { listProjectNotes, addProjectNote, deleteNote } from "./notes.js";
 import { listSavedViews, createSavedView, deleteSavedView } from "./savedViews.js";
 import { getNews } from "./news.js";
+import { getSettings, setSetting, pruneOldRequests, SETTING_KEYS, type SettingKey } from "./settings.js";
 
 const PORT = Number(process.env.PORT ?? 4317);
 const INGEST_INTERVAL_MS = 10_000;
@@ -112,6 +119,10 @@ app.put<{ Body: { thresholdUsd: number; enabled: boolean } }>("/api/alerts/rules
 
 app.get<{ Querystring: { limit?: string } }>("/api/alerts/events", async (req) => {
   return getAlertEvents(Number(req.query.limit ?? 20));
+});
+
+app.patch<{ Params: { id: string } }>("/api/alerts/events/:id/acknowledge", async (req) => {
+  return acknowledgeAlertEvent(req.params.id);
 });
 
 app.get("/api/forecast", async () => getMonthlyCostForecast());
@@ -232,6 +243,17 @@ app.get<{ Querystring: { limit?: string; force?: string } }>("/api/news", async 
   return getNews(Number(req.query.limit ?? 20), req.query.force === "1");
 });
 
+app.get("/api/settings", async () => getSettings());
+
+app.put<{ Params: { key: string }; Body: { value: string } }>("/api/settings/:key", async (req, reply) => {
+  if (!SETTING_KEYS.includes(req.params.key as SettingKey)) {
+    reply.code(400);
+    return { error: `Unknown setting key: ${req.params.key}` };
+  }
+  await setSetting(req.params.key as SettingKey, req.body.value);
+  return getSettings();
+});
+
 const VALID_PERIODS: ReportPeriod[] = ["day", "week", "month"];
 
 app.get<{ Querystring: { period?: string; format?: string } }>("/api/reports/export", async (req, reply) => {
@@ -263,6 +285,12 @@ async function ingestAndNotify() {
     for (const alert of newAlerts) {
       app.log.warn({ alert }, "budget alert triggered");
       broadcastAlert(alert.message);
+    }
+
+    const pruned = await pruneOldRequests();
+    if (pruned > 0) {
+      app.log.info({ pruned }, "pruned requests past the configured retention window");
+      broadcastRefresh();
     }
   } catch (err) {
     app.log.error(err, "ingestion cycle failed");

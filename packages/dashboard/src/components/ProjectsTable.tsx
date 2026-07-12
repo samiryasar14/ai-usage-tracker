@@ -1,5 +1,7 @@
 import type { ProjectAnalyticsRow } from "../api";
 import { formatCompact, formatCount, formatCurrency } from "../format";
+import { useSortableRows } from "../useSortableRows";
+import { SortableTh } from "./SortableTh";
 
 interface ProjectsTableProps {
   rows: ProjectAnalyticsRow[];
@@ -7,21 +9,60 @@ interface ProjectsTableProps {
   selectedProjectId?: string | null;
 }
 
+type SortKey = "name" | "sessions" | "requests" | "tokens" | "cost" | "lastActiveAt";
+
+const getValue = (row: ProjectAnalyticsRow, key: SortKey) =>
+  key === "lastActiveAt" ? (row.lastActiveAt ? new Date(row.lastActiveAt).getTime() : 0) : row[key];
+
 export function ProjectsTable({ rows, onSelect, selectedProjectId }: ProjectsTableProps) {
+  const { sorted, sortKey, direction, toggleSort } = useSortableRows<ProjectAnalyticsRow, SortKey>(
+    rows,
+    getValue,
+    "cost",
+  );
+
   return (
     <table className="w-full text-sm">
       <thead>
-        <tr className="border-b border-hairline text-left text-text-secondary">
-          <th className="py-2 font-medium">Project</th>
-          <th className="py-2 font-medium text-right">Sessions</th>
-          <th className="py-2 font-medium text-right">Requests</th>
-          <th className="py-2 font-medium text-right">Tokens</th>
-          <th className="py-2 font-medium text-right">Cost</th>
-          <th className="py-2 font-medium text-right">Last active</th>
+        <tr className="border-b border-hairline text-text-secondary">
+          <SortableTh label="Project" sortKey="name" activeKey={sortKey} direction={direction} onSort={toggleSort} />
+          <SortableTh
+            label="Sessions"
+            sortKey="sessions"
+            activeKey={sortKey}
+            direction={direction}
+            onSort={toggleSort}
+            align="right"
+          />
+          <SortableTh
+            label="Requests"
+            sortKey="requests"
+            activeKey={sortKey}
+            direction={direction}
+            onSort={toggleSort}
+            align="right"
+          />
+          <SortableTh
+            label="Tokens"
+            sortKey="tokens"
+            activeKey={sortKey}
+            direction={direction}
+            onSort={toggleSort}
+            align="right"
+          />
+          <SortableTh label="Cost" sortKey="cost" activeKey={sortKey} direction={direction} onSort={toggleSort} align="right" />
+          <SortableTh
+            label="Last active"
+            sortKey="lastActiveAt"
+            activeKey={sortKey}
+            direction={direction}
+            onSort={toggleSort}
+            align="right"
+          />
         </tr>
       </thead>
       <tbody>
-        {rows.map((row) => (
+        {sorted.map((row) => (
           <tr
             key={row.projectId}
             onClick={onSelect ? () => onSelect(row.projectId) : undefined}

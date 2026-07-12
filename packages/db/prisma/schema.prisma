@@ -198,3 +198,12 @@ model SavedView {
   filterConfig String
   createdAt    DateTime @default(now())
 }
+
+// Generic key-value app settings (data retention window, notification
+// preferences, export defaults, ...) — one row per key, value is a raw
+// string the caller parses (number/bool/JSON as needed). See
+// packages/server/src/settings.ts.
+model Setting {
+  key   String @id
+  value String
+}

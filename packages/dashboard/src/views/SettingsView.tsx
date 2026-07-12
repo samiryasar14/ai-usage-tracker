@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { DatabaseBackup, FolderOpen, Plug, Smartphone, UserCircle } from "lucide-react";
+import { Bell, CheckCircle2, DatabaseBackup, FileDown, FolderOpen, Plug, Smartphone, UserCircle } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import type { ComponentType, ReactNode } from "react";
-import { api, type PairingSession } from "../api";
+import { api, type PairingSession, type ReportFormat, type ReportPeriod } from "../api";
 
 const isElectron = window.electronAPI?.isElectron === true;
 
@@ -36,6 +36,19 @@ export function SettingsView() {
   }
 
   const queryClient = useQueryClient();
+
+  const settings = useQuery({ queryKey: ["settings"], queryFn: api.settings });
+
+  const setSetting = useMutation({
+    mutationFn: ({ key, value }: { key: Parameters<typeof api.setSetting>[0]; value: string }) =>
+      api.setSetting(key, value),
+    onSuccess: (data) => queryClient.setQueryData(["settings"], data),
+  });
+
+  const retentionDays = settings.data?.dataRetentionDays ?? "0";
+  const notifyOnBudgetAlert = settings.data?.notifyOnBudgetAlert !== "false";
+  const defaultReportPeriod = (settings.data?.defaultReportPeriod as ReportPeriod) ?? "month";
+  const defaultReportFormat = (settings.data?.defaultReportFormat as ReportFormat) ?? "csv";
 
   const [backupMessage, setBackupMessage] = useState<string | null>(null);
 
@@ -272,9 +285,85 @@ export function SettingsView() {
         </section>
       )}
 
-      {isElectron && (
-        <section className="mt-8 rounded-lg border border-hairline bg-surface p-5">
-          <SectionHeading icon={Plug}>Providers</SectionHeading>
+      <section className="mt-8 rounded-lg border border-hairline bg-surface p-5">
+        <SectionHeading icon={Bell}>Notifications & data</SectionHeading>
+        <div className="mt-3 flex flex-col gap-4">
+          <label className="flex items-center gap-2 text-sm text-text-secondary">
+            <input
+              type="checkbox"
+              checked={notifyOnBudgetAlert}
+              onChange={(e) =>
+                setSetting.mutate({ key: "notifyOnBudgetAlert", value: e.target.checked ? "true" : "false" })
+              }
+              className="accent-series-1 transition-colors focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
+            />
+            Send a desktop notification when a budget alert fires
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-text-secondary">
+            Keep detailed request history for
+            <select
+              value={retentionDays}
+              onChange={(e) => setSetting.mutate({ key: "dataRetentionDays", value: e.target.value })}
+              className="w-48 rounded-md border border-hairline bg-transparent px-2 py-1.5 text-text-primary focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
+            >
+              <option value="0">Forever (default)</option>
+              <option value="30">30 days</option>
+              <option value="90">90 days</option>
+              <option value="180">180 days</option>
+              <option value="365">365 days</option>
+            </select>
+            <span className="text-xs text-text-muted">
+              Requests older than this are deleted automatically. Aggregated totals for already-elapsed periods
+              aren&apos;t affected, but drilling into old sessions won&apos;t be possible.
+            </span>
+          </label>
+        </div>
+      </section>
+
+      <section className="mt-8 rounded-lg border border-hairline bg-surface p-5">
+        <SectionHeading icon={FileDown}>Export defaults</SectionHeading>
+        <div className="mt-3 flex flex-wrap items-end gap-3">
+          <label className="flex flex-col gap-1 text-sm text-text-secondary">
+            Default period
+            <select
+              value={defaultReportPeriod}
+              onChange={(e) => setSetting.mutate({ key: "defaultReportPeriod", value: e.target.value })}
+              className="w-40 rounded-md border border-hairline bg-transparent px-2 py-1.5 text-text-primary focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
+            >
+              <option value="day">Today</option>
+              <option value="week">Last 7 days</option>
+              <option value="month">This month</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-text-secondary">
+            Default format
+            <select
+              value={defaultReportFormat}
+              onChange={(e) => setSetting.mutate({ key: "defaultReportFormat", value: e.target.value })}
+              className="w-32 rounded-md border border-hairline bg-transparent px-2 py-1.5 text-text-primary focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
+            >
+              <option value="csv">CSV</option>
+              <option value="json">JSON</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section className="mt-8 rounded-lg border border-hairline bg-surface p-5">
+        <SectionHeading icon={Plug}>Providers</SectionHeading>
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-md border border-hairline px-3 py-2">
+          <div>
+            <div className="text-sm font-medium text-text-primary">Claude Code</div>
+            <div className="text-sm text-text-muted">Reads usage directly from local session logs.</div>
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5 text-sm text-series-1">
+            <CheckCircle2 size={15} />
+            Connected
+          </div>
+        </div>
+
+        {isElectron && (
           <div className="mt-3">
             {hasOpenAIKey.data ? (
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -333,8 +422,8 @@ export function SettingsView() {
             )}
             {openaiMessage && <p className="mt-3 text-sm text-text-muted">{openaiMessage}</p>}
           </div>
-        </section>
-      )}
+        )}
+      </section>
     </div>
   );
 }
