@@ -35,7 +35,7 @@ export async function getRecommendedProjectLimit(projectId: string): Promise<{
   const midpoint = new Date(now.getTime() - HALF_WINDOW_DAYS * MS_PER_DAY);
 
   const requests = await db.request.findMany({
-    where: { session: { projectId }, timestamp: { gte: thirtyDaysAgo } },
+    where: { session: { projectId }, timestamp: { gte: thirtyDaysAgo }, isSidechain: false },
     select: { cost: true, timestamp: true },
   });
 

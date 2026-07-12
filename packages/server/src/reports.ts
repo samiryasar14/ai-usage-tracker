@@ -34,7 +34,7 @@ export async function getReportRows(period: ReportPeriod): Promise<ReportRow[]> 
   const since = periodStart(period);
 
   const requests = await db.request.findMany({
-    where: { timestamp: { gte: since } },
+    where: { timestamp: { gte: since }, isSidechain: false },
     orderBy: { timestamp: "asc" },
     include: {
       model: { include: { provider: true } },

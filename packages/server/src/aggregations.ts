@@ -17,12 +17,12 @@ export async function getOverview() {
 
   const [todayAgg, monthAgg, modelsUsed, providersConnected, unpricedModels] = await Promise.all([
     db.request.aggregate({
-      where: { timestamp: { gte: todayStart } },
+      where: { timestamp: { gte: todayStart }, isSidechain: false },
       _count: true,
       _sum: { inputTokens: true, outputTokens: true, cacheReadTokens: true, cacheCreationTokens: true },
     }),
     db.request.aggregate({
-      where: { timestamp: { gte: monthStart } },
+      where: { timestamp: { gte: monthStart }, isSidechain: false },
       _count: true,
       _sum: {
         inputTokens: true,
@@ -36,7 +36,7 @@ export async function getOverview() {
     db.provider.count(),
     db.model.findMany({
       where: { pricingUnknown: true },
-      select: { name: true, _count: { select: { requests: true } } },
+      select: { name: true, _count: { select: { requests: { where: { isSidechain: false } } } } },
     }),
   ]);
 
@@ -77,7 +77,7 @@ export async function getTimeline(days: number) {
       SUM(inputTokens + outputTokens + cacheReadTokens + cacheCreationTokens) as tokens,
       SUM(cost) as cost
     FROM Request
-    WHERE timestamp >= ${sinceMs}
+    WHERE timestamp >= ${sinceMs} AND isSidechain = 0
     GROUP BY day
     ORDER BY day ASC
   `;
@@ -94,6 +94,7 @@ export async function getModelLeaderboard() {
   const db = getDb();
   const grouped = await db.request.groupBy({
     by: ["modelId"],
+    where: { isSidechain: false },
     _count: true,
     _sum: { inputTokens: true, outputTokens: true, cacheReadTokens: true, cacheCreationTokens: true, cost: true },
   });
@@ -145,6 +146,7 @@ export async function getProjectAnalytics() {
     FROM Project p
     JOIN Session s ON s.projectId = p.id
     JOIN Request r ON r.sessionId = s.id
+    WHERE r.isSidechain = 0
     GROUP BY p.id
     ORDER BY cost DESC
   `;
@@ -180,6 +182,7 @@ export async function getSessionHistory(limit: number, projectPath?: string, mod
   const db = getDb();
   const requests = await db.request.findMany({
     where: {
+      isSidechain: false,
       ...(modelName ? { model: { name: modelName } } : {}),
       ...(projectPath ? { session: { project: { path: projectPath } } } : {}),
     },

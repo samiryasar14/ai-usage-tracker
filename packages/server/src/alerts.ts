@@ -16,7 +16,7 @@ async function getCurrentMonthSpend(): Promise<number> {
   const db = getDb();
   const monthStart = currentMonthSpendWhere();
   const agg = await db.request.aggregate({
-    where: { timestamp: { gte: monthStart } },
+    where: { timestamp: { gte: monthStart }, isSidechain: false },
     _sum: { cost: true },
   });
   return agg._sum.cost ?? 0;

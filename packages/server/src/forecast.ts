@@ -18,7 +18,7 @@ export async function getMonthlyCostForecast() {
   const totalDays = daysInMonth(now.getUTCFullYear(), now.getUTCMonth());
 
   const agg = await db.request.aggregate({
-    where: { timestamp: { gte: monthStart } },
+    where: { timestamp: { gte: monthStart }, isSidechain: false },
     _sum: { cost: true },
   });
   const costSoFar = agg._sum.cost ?? 0;

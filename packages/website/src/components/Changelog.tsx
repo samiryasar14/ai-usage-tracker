@@ -1,4 +1,4 @@
-import { Bug, Sparkles } from "lucide-react";
+import { Bug, Sparkles, Wrench } from "lucide-react";
 import { Reveal } from "./Reveal";
 
 const RELEASES = [
@@ -9,6 +9,7 @@ const RELEASES = [
       { icon: Bug, text: "Fixed the packaged Windows app opening to a blank white screen." },
       { icon: Bug, text: "Fixed the app/taskbar/installer icon showing the generic Electron icon instead of the real logo." },
       { icon: Sparkles, text: "GitHub account renamed to sysamiryasar — repo links and auto-update now point to the new owner." },
+      { icon: Wrench, text: "Fixed subagent turns being double-counted in cost and token totals across the dashboard, alerts, and forecast." },
     ],
   },
   {

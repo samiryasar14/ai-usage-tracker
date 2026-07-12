@@ -4,14 +4,9 @@ Current state: Phase 1 core is more complete than the original scaffold notes su
 
 Priorities below reflect: **ship-readiness is near-term**, plus all four tracks (providers, intelligence, UX, native/distribution) matter — so phases run partly in parallel rather than strictly sequential.
 
-## Correctness backlog (do first, regardless of phase)
+## Correctness backlog
 
-These aren't new features — they're bugs/gaps in what already exists that will undermine trust in the numbers if left alone:
-
-- **Sidechain/subagent double-counting risk** — `transcriptParser.ts` counts every `type:"assistant"` line with usage as a top-level request. If Claude Code's log format includes subagent/sidechain turns without a distinguishing field being checked, those get counted as regular requests, inflating cost/token totals. Needs verification against a real subagent session's JSONL and a fix to filter or separately attribute sidechain turns.
-- **Silent $0 pricing for unknown models** — `ingest.ts` defaults unpriced models to cost `0` with no warning. A new model release (or renamed model string) silently under-reports spend. Add a warning log plus a dashboard indicator ("N requests from unpriced models, cost not included").
-- **WebSocket has no reconnect logic** — `connectRefreshSocket` in `api.ts` never retries on close/error. If the connection drops (server restart, sleep/wake), the UI silently stops receiving live updates until a manual reload. Add exponential-backoff reconnect.
-- **No loading or error states anywhere in the dashboard** — a failed fetch or slow load is indistinguishable from "no data yet." Add `isLoading`/`isError` handling to the `useQuery` calls in `App.tsx` at minimum for `overview`.
+Resolved — sidechain/subagent turns are now excluded from every cost/token aggregation (`isSidechain: false` across `aggregations.ts`, `alerts.ts`, `recommendations.ts`, `reports.ts`, `forecast.ts`), unpriced models surface a dashboard warning, the WebSocket reconnects with exponential backoff, and the dashboard shows loading/error states.
 
 ## Phase A — Ship-readiness (near-term)
 
