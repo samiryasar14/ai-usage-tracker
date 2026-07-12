@@ -158,6 +158,14 @@ export interface SavedView {
 export type SettingKey = "dataRetentionDays" | "notifyOnBudgetAlert" | "defaultReportPeriod" | "defaultReportFormat";
 export type Settings = Partial<Record<SettingKey, string>>;
 
+export interface ProviderStatus {
+  name: string;
+  displayName: string;
+  requiresCredentials: boolean;
+  enabled: boolean;
+  connected: boolean;
+}
+
 async function getJson<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`);
   if (!res.ok) throw new Error(`${path} failed: ${res.status}`);
@@ -256,6 +264,9 @@ export const api = {
     getJson<NewsItem[]>(`/api/news?limit=${limit}${force ? "&force=1" : ""}`),
   settings: () => getJson<Settings>("/api/settings"),
   setSetting: (key: SettingKey, value: string) => putJson<Settings>(`/api/settings/${key}`, { value }),
+  providers: () => getJson<ProviderStatus[]>("/api/providers"),
+  setProviderEnabled: (name: string, enabled: boolean) =>
+    putJson<ProviderStatus[]>(`/api/providers/${name}/enabled`, { enabled }),
 };
 
 interface SocketHandlers {

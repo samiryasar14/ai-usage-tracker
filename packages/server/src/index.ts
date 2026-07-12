@@ -30,6 +30,7 @@ import { listProjectNotes, addProjectNote, deleteNote } from "./notes.js";
 import { listSavedViews, createSavedView, deleteSavedView } from "./savedViews.js";
 import { getNews } from "./news.js";
 import { getSettings, setSetting, pruneOldRequests, SETTING_KEYS, type SettingKey } from "./settings.js";
+import { getProviderStatuses, setProviderEnabled, PROVIDER_PLUGINS } from "./providers.js";
 
 const PORT = Number(process.env.PORT ?? 4317);
 const INGEST_INTERVAL_MS = 10_000;
@@ -241,6 +242,17 @@ app.delete<{ Params: { id: string } }>("/api/saved-views/:id", async (req, reply
 
 app.get<{ Querystring: { limit?: string; force?: string } }>("/api/news", async (req) => {
   return getNews(Number(req.query.limit ?? 20), req.query.force === "1");
+});
+
+app.get("/api/providers", async () => getProviderStatuses());
+
+app.put<{ Params: { name: string }; Body: { enabled: boolean } }>("/api/providers/:name/enabled", async (req, reply) => {
+  if (!PROVIDER_PLUGINS.some((p) => p.name === req.params.name)) {
+    reply.code(404);
+    return { error: `Unknown provider: ${req.params.name}` };
+  }
+  await setProviderEnabled(req.params.name, req.body.enabled);
+  return getProviderStatuses();
 });
 
 app.get("/api/settings", async () => getSettings());

@@ -7,8 +7,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   isElectron: true,
   backupDatabase: () => ipcRenderer.invoke("backup-database"),
   openDataFolder: () => ipcRenderer.invoke("open-data-folder"),
-  saveOpenAIKey: (key) => ipcRenderer.invoke("save-openai-key", key),
-  hasOpenAIKey: () => ipcRenderer.invoke("has-openai-key"),
-  clearOpenAIKey: () => ipcRenderer.invoke("clear-openai-key"),
+  saveCredential: (provider, key) => ipcRenderer.invoke("save-credential", provider, key),
+  hasCredential: (provider) => ipcRenderer.invoke("has-credential", provider),
+  clearCredential: (provider) => ipcRenderer.invoke("clear-credential", provider),
   showNotification: (title, body) => ipcRenderer.invoke("show-notification", title, body),
 });

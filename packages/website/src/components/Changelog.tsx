@@ -1,7 +1,16 @@
-import { Bug, ListChecks, Sparkles, Wrench } from "lucide-react";
+import { Bug, ListChecks, Plug, Sparkles, Wrench } from "lucide-react";
 import { Reveal } from "./Reveal";
 
 const RELEASES = [
+  {
+    version: "v0.4.0",
+    date: "July 12, 2026",
+    changes: [
+      { icon: Plug, text: "New GitHub Copilot plugin — pulls billed usage from GitHub's billing API." },
+      { icon: Sparkles, text: "Providers are a real registry now: enable/disable and live connection status for each one in Settings." },
+      { icon: Wrench, text: "Fixed OpenAI/Copilot requests being wrongly flagged as \"cost not counted\" when their cost was already accurate." },
+    ],
+  },
   {
     version: "v0.3.0",
     date: "July 12, 2026",

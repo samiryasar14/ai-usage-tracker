@@ -34,18 +34,20 @@ Done:
 
 Goal: extend beyond Claude Code, per the original vision doc.
 
-The current `ProviderPlugin` interface (`connect()` + `fetchUsage()`) and hardcoded single-plugin array in `ingest.ts` need to grow up first:
+Done:
 
-- **Plugin interface v2** — add `disconnect()`, a config/credentials parameter, capability flags (tail-only vs supports-historical-backfill), and health/connection-status reporting beyond a boolean.
-- **Plugin registry** — replace the hardcoded `plugins = [new ClaudeCodePlugin()]` array with a configurable registry (enable/disable per provider from the new Settings page).
-- **Pricing abstraction** — `pricing.ts` is 100% Claude-specific today (a static hardcoded table). Generalize to a per-provider pricing module pattern, and document/automate how the static snapshot gets refreshed over time (even a manual "last updated" reminder beats silent staleness).
-- **Credential storage** — API-based providers (unlike Claude Code's local-log approach) need API keys. Use Electron's `safeStorage` API for OS-level encryption rather than storing keys in plaintext in SQLite.
+- **OpenAI** — already existed going into this phase (`packages/plugins/openai`), pulling usage/cost from OpenAI's organization admin API. Nothing further needed.
+- **Plugin interface v2 (right-sized)** — `ProviderPlugin` gained `displayName` and `requiresCredentials`; skipped adding a plugin-level `disconnect()` since there's no resource to release beyond the credential file, which the registry already handles.
+- **Plugin registry** — `packages/server/src/providers.ts` replaces the hardcoded plugin array. Each provider's enabled/disabled state is a `Setting` row (`provider:<name>:enabled`, default on); `runIngestionCycle` only fetches from enabled plugins.
+- **Credential storage** — generalized from OpenAI-only to any provider: `packages/desktop/src/main.cjs` now has generic `credentialPath`/`readDecryptedCredential` helpers and `save-credential`/`has-credential`/`clear-credential` IPC handlers, keyed by provider name.
+- **Settings UI** — the Providers section is now driven by `GET /api/providers` (`ProviderCard.tsx`), showing live connection status and an enable/disable toggle for every registered provider, credentialed or not.
+- **GitHub Copilot** — feasibility confirmed (`GET /users/{username}/settings/billing/usage`, a real per-user billing API requiring a PAT with access to GitHub's enhanced billing platform) and built (`packages/plugins/github-copilot`). Caveat: this API reports billed dollar amounts and quantities, not token counts — Copilot rows will always show 0 tokens with an accurate cost. Also unverified against a live enhanced-billing account: whether omitting the `day` query param returns the whole month (assumed) or just one day — worth confirming with a real account before trusting historical backfill from it.
+- **Pricing abstraction** — turned out not to be needed as originally scoped. Every non-Claude plugin (OpenAI, GitHub Copilot) supplies `precomputedCostUsd` directly from its own API instead of going through the shared Claude-specific pricing table, which sidesteps the need for a generalized per-provider pricing module.
 
-Suggested plugin order (build order, not necessarily final priority — confirm with user before starting each):
-1. **OpenAI** (ChatGPT/Codex usage via API) — well-documented usage API, good second data point.
-2. **GitHub Copilot** — usage API exists at the org/enterprise level; individual-plan usage may not be exposable, worth a quick feasibility check before committing.
-3. **Cursor** — check whether Cursor keeps local logs similar to Claude Code before assuming an API-based plugin is needed.
-4. **Gemini / Google AI Studio** — similar API-key-based shape to OpenAI.
+Still open:
+
+- **Cursor** — no official usage/billing API exists. Local data is an undocumented SQLite store (`state.vscdb`) with chat/session history, not a clean token/cost log like Claude Code's JSONL — reverse-engineering it risks feeding wrong numbers into the one thing this app promises to get right. Not attempted; would need much more dedicated research (or an official API shipping) before it's worth building.
+- **Gemini / Google AI Studio** — no per-key admin usage-query endpoint comparable to OpenAI's was found; billing runs through a Cloud Billing account, which likely means a heavier integration (Cloud Billing export / BigQuery) than the API-key pattern the other plugins use. Not attempted — needs a scoping decision before starting.
 
 ## Phase D — Intelligence & analytics (can overlap Phase C)
 

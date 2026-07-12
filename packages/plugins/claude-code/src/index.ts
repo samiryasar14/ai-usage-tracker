@@ -51,6 +51,8 @@ async function tailFile(
 
 export class ClaudeCodePlugin implements ProviderPlugin {
   readonly name = "claude-code";
+  readonly displayName = "Claude Code";
+  readonly requiresCredentials = false;
 
   async connect(): Promise<boolean> {
     const files = await listTranscriptFiles();

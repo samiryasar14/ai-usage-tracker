@@ -26,6 +26,9 @@ export interface NormalizedUsageRecord {
 
 export interface ProviderPlugin {
   readonly name: string;
+  readonly displayName: string;
+  /** False for local-log-based plugins (e.g. Claude Code) that work with no setup. */
+  readonly requiresCredentials: boolean;
 
   /** Verify the plugin can reach its data source (local files, API, etc). */
   connect(): Promise<boolean>;

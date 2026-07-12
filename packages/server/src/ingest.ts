@@ -1,13 +1,7 @@
 import { basename } from "node:path";
 import { getDb } from "@ai-usage-tracker/db";
 import { computeCost, getModelPricing, type NormalizedUsageRecord } from "@ai-usage-tracker/shared";
-import { ClaudeCodePlugin } from "@ai-usage-tracker/plugin-claude-code";
-import { OpenAIPlugin } from "@ai-usage-tracker/plugin-openai";
-
-// OpenAIPlugin is included unconditionally — its fetchUsage() already no-ops
-// safely (returns []) when OPENAI_ADMIN_API_KEY isn't configured, so there's no
-// need to gate it here.
-const plugins = [new ClaudeCodePlugin(), new OpenAIPlugin()];
+import { getEnabledPlugins } from "./providers.js";
 
 // Warn at most once per unpriced model per process lifetime, not once per request.
 const warnedUnpricedModels = new Set<string>();
@@ -37,7 +31,12 @@ export async function persistRecords(records: NormalizedUsageRecord[]): Promise<
     });
 
     const pricing = getModelPricing(record.modelName);
-    if (!pricing && !warnedUnpricedModels.has(record.modelName)) {
+    // A plugin supplying its own precomputedCostUsd (OpenAI, GitHub Copilot)
+    // means cost is known even when this model has no entry in the local,
+    // Claude-specific pricing table — only warn/flag when neither source
+    // can account for the cost.
+    const costKnown = pricing !== undefined || record.precomputedCostUsd !== undefined;
+    if (!costKnown && !warnedUnpricedModels.has(record.modelName)) {
       warnedUnpricedModels.add(record.modelName);
       console.warn(
         `[ingest] No pricing entry for model "${record.modelName}" — its requests will be recorded with cost=0 until pricing.ts is updated.`,
@@ -45,7 +44,7 @@ export async function persistRecords(records: NormalizedUsageRecord[]): Promise<
     }
     const model = await db.model.upsert({
       where: { providerId_name: { providerId: provider.id, name: record.modelName } },
-      update: { pricingUnknown: !pricing },
+      update: { pricingUnknown: !costKnown },
       create: {
         providerId: provider.id,
         name: record.modelName,
@@ -54,7 +53,7 @@ export async function persistRecords(records: NormalizedUsageRecord[]): Promise<
         outputPricePerMTok: pricing?.outputPerMTok ?? 0,
         cacheReadPricePerMTok: pricing?.cacheReadPerMTok ?? 0,
         cacheWritePricePerMTok: pricing?.cacheWrite5mPerMTok ?? 0,
-        pricingUnknown: !pricing,
+        pricingUnknown: !costKnown,
       },
     });
 
@@ -95,10 +94,10 @@ export async function persistRecords(records: NormalizedUsageRecord[]): Promise<
   return written;
 }
 
-/** Runs one ingestion cycle across all registered provider plugins. */
+/** Runs one ingestion cycle across every enabled provider plugin. */
 export async function runIngestionCycle(): Promise<number> {
   let total = 0;
-  for (const plugin of plugins) {
+  for (const plugin of await getEnabledPlugins()) {
     const records = await plugin.fetchUsage();
     total += await persistRecords(records);
   }

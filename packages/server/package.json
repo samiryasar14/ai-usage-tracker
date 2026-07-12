@@ -1,6 +1,6 @@
 {
   "name": "@ai-usage-tracker/server",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -16,6 +16,7 @@
     "@ai-usage-tracker/shared": "workspace:*",
     "@ai-usage-tracker/plugin-claude-code": "workspace:*",
     "@ai-usage-tracker/plugin-openai": "workspace:*",
+    "@ai-usage-tracker/plugin-github-copilot": "workspace:*",
     "@fastify/cors": "^10.0.1",
     "@fastify/websocket": "^11.0.1",
     "@prisma/client": "^6.2.1",

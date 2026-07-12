@@ -6,9 +6,9 @@ declare global {
       isElectron: true;
       backupDatabase: () => Promise<{ ok: boolean; error: string | null }>;
       openDataFolder: () => Promise<void>;
-      saveOpenAIKey: (key: string) => Promise<{ ok: boolean; error: string | null }>;
-      hasOpenAIKey: () => Promise<boolean>;
-      clearOpenAIKey: () => Promise<{ ok: boolean; error: string | null }>;
+      saveCredential: (provider: string, key: string) => Promise<{ ok: boolean; error: string | null }>;
+      hasCredential: (provider: string) => Promise<boolean>;
+      clearCredential: (provider: string) => Promise<{ ok: boolean; error: string | null }>;
       showNotification: (title: string, body: string) => Promise<void>;
     };
   }

@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.4.0 — 2026-07-12
+
+- Added a GitHub Copilot plugin — pulls per-day billed usage from GitHub's billing usage API (personal access token required; connect it from Settings → Providers).
+- Providers are now a real registry instead of a hardcoded list: every connected provider (Claude Code, OpenAI, GitHub Copilot) gets its own enable/disable toggle and live connection status in Settings.
+- Provider plugin credentials now share one generic, encrypted-at-rest storage path instead of OpenAI-specific code, making it straightforward to add the next provider.
+- Fixed the "unpriced model" warning incorrectly flagging every OpenAI (and now GitHub Copilot) request as cost-not-counted — it only checked the local Claude-specific pricing table, ignoring that these plugins already supply an accurate cost directly from their own APIs.
+
 ## v0.3.0 — 2026-07-12
 
 - Fixed subagent/sidechain turns being counted as regular requests, inflating cost and token totals in the overview, model leaderboard, project analytics, session history, budget alerts, forecast, and reports.

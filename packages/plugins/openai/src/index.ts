@@ -172,6 +172,8 @@ interface DayModelTokens {
 
 export class OpenAIPlugin implements ProviderPlugin {
   readonly name = "openai";
+  readonly displayName = "OpenAI";
+  readonly requiresCredentials = true;
 
   async connect(): Promise<boolean> {
     if (!process.env.OPENAI_ADMIN_API_KEY) return false;

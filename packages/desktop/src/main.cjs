@@ -54,29 +54,32 @@ function packagedDbPath() {
   return path.join(app.getPath("userData"), "ai-usage-hub.db");
 }
 
-function openaiKeyPath() {
-  return path.join(app.getPath("userData"), "openai-key.enc");
+// Each credentialed provider (openai, github-copilot, ...) gets its own
+// encrypted-at-rest file, named by provider id, backing the generic
+// save/has/clear-credential IPC handlers below.
+function credentialPath(providerName) {
+  return path.join(app.getPath("userData"), `${providerName}-key.enc`);
 }
 
 // The Fastify server runs as a plain Node child process, so it can't call
 // Electron's safeStorage API itself (main-process only). Instead we decrypt the
 // key here, in the main process, and hand it to the child as a plain env var at
-// spawn time — same pattern as DATABASE_URL below. That means changing the key
+// spawn time — same pattern as DATABASE_URL below. That means changing a key
 // requires an app restart to take effect; see the "Providers" section of
 // Settings in the dashboard, which says so explicitly.
-function readDecryptedOpenAIKey() {
-  const keyPath = openaiKeyPath();
+function readDecryptedCredential(providerName) {
+  const keyPath = credentialPath(providerName);
   if (!fs.existsSync(keyPath)) return undefined;
   try {
     if (!safeStorage.isEncryptionAvailable()) {
-      console.error("OpenAI key file exists but OS-level encryption is unavailable; ignoring it.");
+      console.error(`${providerName} credential file exists but OS-level encryption is unavailable; ignoring it.`);
       return undefined;
     }
     const encrypted = fs.readFileSync(keyPath);
     const decrypted = safeStorage.decryptString(encrypted);
     return decrypted || undefined;
   } catch (err) {
-    console.error("Failed to decrypt stored OpenAI key:", err);
+    console.error(`Failed to decrypt stored ${providerName} credential:`, err);
     return undefined;
   }
 }
@@ -91,7 +94,8 @@ function startServerDev() {
     shell: process.platform === "win32",
     env: {
       ...process.env,
-      OPENAI_ADMIN_API_KEY: readDecryptedOpenAIKey(),
+      OPENAI_ADMIN_API_KEY: readDecryptedCredential("openai"),
+      GITHUB_COPILOT_TOKEN: readDecryptedCredential("github-copilot"),
     },
   });
   serverProcess.on("exit", (code) => {
@@ -120,7 +124,8 @@ function startServerPackaged() {
       RUN_APP_MIGRATIONS: "1",
       MIGRATIONS_DIR: migrationsDir,
       PORT: String(SERVER_PORT),
-      OPENAI_ADMIN_API_KEY: readDecryptedOpenAIKey(),
+      OPENAI_ADMIN_API_KEY: readDecryptedCredential("openai"),
+      GITHUB_COPILOT_TOKEN: readDecryptedCredential("github-copilot"),
     },
   });
   serverProcess.on("exit", (code) => {
@@ -174,13 +179,15 @@ ipcMain.handle("backup-database", async () => {
 
 ipcMain.handle("open-data-folder", () => shell.openPath(app.getPath("userData")));
 
-// Backs the "Providers" section in Settings. The renderer only ever learns
-// *whether* an OpenAI key is stored (has-openai-key), never the key itself —
-// save/clear are one-way. The key is encrypted at rest with Electron's
-// safeStorage (OS keychain-backed) and only decrypted in this process, right
-// before it's handed to the server child process as an env var (see
-// readDecryptedOpenAIKey / startServerDev / startServerPackaged above).
-ipcMain.handle("save-openai-key", (event, key) => {
+// Backs the "Providers" section in Settings, generic across every
+// credentialed provider (openai, github-copilot, ...). The renderer only ever
+// learns *whether* a credential is stored (has-credential), never the
+// credential itself — save/clear are one-way. Each credential is encrypted at
+// rest with Electron's safeStorage (OS keychain-backed) and only decrypted in
+// this process, right before it's handed to the server child process as an
+// env var (see readDecryptedCredential / startServerDev / startServerPackaged
+// above).
+ipcMain.handle("save-credential", (event, providerName, key) => {
   if (typeof key !== "string" || key.trim() === "") {
     return { ok: false, error: "No key provided." };
   }
@@ -189,23 +196,23 @@ ipcMain.handle("save-openai-key", (event, key) => {
   }
   try {
     const encrypted = safeStorage.encryptString(key.trim());
-    fs.writeFileSync(openaiKeyPath(), encrypted);
+    fs.writeFileSync(credentialPath(providerName), encrypted);
     return { ok: true, error: null };
   } catch (err) {
-    console.error("Failed to save OpenAI key:", err);
+    console.error(`Failed to save ${providerName} credential:`, err);
     return { ok: false, error: "Failed to save the key." };
   }
 });
 
-ipcMain.handle("has-openai-key", () => fs.existsSync(openaiKeyPath()));
+ipcMain.handle("has-credential", (event, providerName) => fs.existsSync(credentialPath(providerName)));
 
-ipcMain.handle("clear-openai-key", () => {
+ipcMain.handle("clear-credential", (event, providerName) => {
   try {
-    const keyPath = openaiKeyPath();
+    const keyPath = credentialPath(providerName);
     if (fs.existsSync(keyPath)) fs.unlinkSync(keyPath);
     return { ok: true, error: null };
   } catch (err) {
-    console.error("Failed to clear OpenAI key:", err);
+    console.error(`Failed to clear ${providerName} credential:`, err);
     return { ok: false, error: "Failed to clear the key." };
   }
 });
