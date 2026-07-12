@@ -2,7 +2,7 @@
   "name": "soar-ai-tracker",
   "private": true,
   "license": "MIT",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "packageManager": "pnpm@10.0.0",
   "engines": {
     "node": ">=20"

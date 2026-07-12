@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.5.0 — 2026-07-12
+
+- Smarter monthly forecast — weighs remaining days by weekday/weekend average instead of a single flat daily rate, and shows a month-over-month trend on the dashboard.
+- New "Spending anomalies" panel flags days that are unusually high vs. your trailing 30-day average.
+- Subscriptions are now unified with usage cost: "Total spend so far" and "Projected month-end spend" combine metered usage with prorated subscription fees, instead of showing usage cost alone.
+- Added PDF export (summary by model/project, alongside the existing CSV/JSON row-level exports).
+- Budget rules are now per-project or per-model, not just account-wide, and support a daily budget in addition to monthly. The Budget Alerts panel lets you add/enable/disable/remove any number of rules.
+- Added a deterministic "Insights" summary — a few sentences on what changed this month (spend trend, top model/project, anomalies), built entirely from numbers already on the dashboard rather than an LLM call.
+
 ## v0.4.0 — 2026-07-12
 
 - Added a GitHub Copilot plugin — pulls per-day billed usage from GitHub's billing usage API (personal access token required; connect it from Settings → Providers).

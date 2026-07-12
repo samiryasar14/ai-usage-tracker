@@ -1,4 +1,4 @@
-import { FileDown, FileJson } from "lucide-react";
+import { FileDown, FileJson, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, reportExportUrl, type ReportFormat, type ReportPeriod } from "../api";
@@ -59,6 +59,13 @@ export function ReportsPanel() {
       >
         <FileJson size={14} />
         Download JSON
+      </a>
+      <a
+        href={reportExportUrl(period, "pdf")}
+        className={defaultFormat === "pdf" ? primaryLinkClass : secondaryLinkClass}
+      >
+        <FileText size={14} />
+        Download PDF
       </a>
     </div>
   );

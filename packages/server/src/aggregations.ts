@@ -1,4 +1,7 @@
 import { getDb } from "@ai-usage-tracker/db";
+import { getActiveSubscriptionsMonthlyTotal } from "./subscriptions.js";
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 function startOfTodayUtc(): Date {
   const now = new Date();
@@ -10,12 +13,18 @@ function startOfMonthUtc(): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 }
 
+function daysInMonth(year: number, monthIndex: number): number {
+  return new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+}
+
 export async function getOverview() {
   const db = getDb();
+  const now = new Date();
   const todayStart = startOfTodayUtc();
   const monthStart = startOfMonthUtc();
 
-  const [todayAgg, monthAgg, modelsUsed, providersConnected, unpricedModels] = await Promise.all([
+  const [todayAgg, monthAgg, modelsUsed, providersConnected, unpricedModels, subscriptionsMonthlyTotal] =
+    await Promise.all([
     db.request.aggregate({
       where: { timestamp: { gte: todayStart }, isSidechain: false },
       _count: true,
@@ -38,6 +47,7 @@ export async function getOverview() {
       where: { pricingUnknown: true },
       select: { name: true, _count: { select: { requests: { where: { isSidechain: false } } } } },
     }),
+    getActiveSubscriptionsMonthlyTotal(),
   ]);
 
   const sumTokens = (agg: {
@@ -51,11 +61,22 @@ export async function getOverview() {
     (agg.cacheReadTokens ?? 0) +
     (agg.cacheCreationTokens ?? 0);
 
+  // Subscriptions bill a flat amount regardless of usage, so "spend so far
+  // this month" prorates each one to a daily rate rather than counting the
+  // full monthly fee from day one — puts it on the same elapsed-time basis
+  // as usage cost, which does accrue daily.
+  const elapsedDays = Math.max((now.getTime() - monthStart.getTime()) / MS_PER_DAY, 0.5);
+  const totalDaysThisMonth = daysInMonth(now.getUTCFullYear(), now.getUTCMonth());
+  const subscriptionCostSoFar = (subscriptionsMonthlyTotal / totalDaysThisMonth) * elapsedDays;
+  const estimatedMonthlyCost = monthAgg._sum.cost ?? 0;
+
   return {
     todayRequests: todayAgg._count,
     todayTokens: sumTokens(todayAgg._sum),
     monthlyTokens: sumTokens(monthAgg._sum),
-    estimatedMonthlyCost: monthAgg._sum.cost ?? 0,
+    estimatedMonthlyCost,
+    subscriptionCostSoFar: Math.round(subscriptionCostSoFar * 100) / 100,
+    totalSpendSoFar: Math.round((estimatedMonthlyCost + subscriptionCostSoFar) * 100) / 100,
     modelsUsed,
     providersConnected,
     unpricedModels: unpricedModels.map((m) => ({ name: m.name, requestCount: m._count.requests })),

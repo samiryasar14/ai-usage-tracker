@@ -53,13 +53,15 @@ Still open:
 
 Goal: the "advanced" half of "advanced features" — turn raw usage data into insight.
 
-- **Better forecasting** — `forecast.ts` today is pure linear extrapolation (`dailyAverage × daysInMonth`). Add weekday/weekend weighting and month-over-month trend comparison at minimum; per-project/per-model forecasts as a stretch.
-- **Anomaly/spike detection** — flag days or sessions that deviate meaningfully from a rolling baseline (simple z-score/IQR is enough — no ML infrastructure needed).
-- **Budget rules v2** — `AlertRule` schema already has a `type` field described as "extensible later" but only `monthly_budget` is implemented. Add per-project and per-model budget rules, a daily-budget option, and "approaching threshold" (e.g. 80%) warnings, not just hard-exceeded.
-- **Unify subscriptions with usage cost** — `Subscription.monthlyCostUsd` and `Request.cost` are currently two disjoint systems; nothing combines them into a single "total AI spend" figure despite that being the natural product framing. Prorate subscription cost into `getOverview()`/forecast/reports.
-- **PDF export** — `reports.ts` currently supports CSV/JSON only.
-- **Native OS notifications for alerts** — today alerts only show as an in-app toast; wire budget-exceeded events to Electron's `Notification` API (ties into Phase A/native work below).
-- **Insights summary (stretch)** — a short natural-language "what changed this month" summary. Could literally call the Claude API to generate it from the aggregated numbers — worth flagging as a nice dogfooding touch, not a must-have for this phase.
+Done:
+
+- **Better forecasting** — `forecast.ts` now buckets completed days into weekday/weekend averages and projects remaining full days using the matching bucket (falls back to a flat average until both bucket types have data), plus a month-over-month `trendPercent` comparing spend through the same elapsed-day point last month. Per-project forecasts already existed via `recommendations.ts`'s trailing-30-day-average + trend recommendation, so the "stretch" case here was effectively already covered — per-model forecasts weren't added on top of that.
+- **Anomaly/spike detection** — `anomalies.ts`, a simple z-score (≥2σ over a 30-day baseline) flagging over-baseline spend spikes, surfaced as a "Spending anomalies" panel on the dashboard when any exist.
+- **Budget rules v2** — `AlertRule` gained `scope`/`scopeId` (global/project/model) and `type` now supports `daily_budget` alongside `monthly_budget`. `BudgetPanel.tsx` is a real CRUD list (add/enable/disable/remove any number of rules) instead of one hardcoded global-monthly form. The existing 80%-"approaching" threshold logic carried over unchanged.
+- **Unify subscriptions with usage cost** — `getOverview()` prorates active subscriptions to a daily rate and adds `subscriptionCostSoFar`/`totalSpendSoFar`; `forecast.ts` adds the full active-subscription total to `totalProjectedCost` (subscriptions bill in full regardless of usage, so nothing to project there). The dashboard's top stat cards now show the combined figures.
+- **PDF export** — `GET /api/reports/export?format=pdf` via `pdfkit`. A raw per-request dump doesn't make a readable PDF at any real data volume, so this is a summary (totals + cost by model/project) rather than mirroring the row-level CSV/JSON.
+- **Native OS notifications for alerts** — already done in Phase B (`showNativeNotification` wired to the websocket's `onAlert`, with a Settings toggle to turn it off).
+- **Insights summary** — built, but as a deterministic summary (`insights.ts`, composed from forecast/leaderboard/project/anomaly data already computed elsewhere) rather than an LLM call, so it needs no additional API credential and can't hallucinate a number the rest of the dashboard doesn't already show.
 
 ## Phase E — Native desktop integration
 
@@ -79,10 +81,7 @@ Lower priority — flagging so they're not forgotten, not because they're urgent
 
 ## Suggested sequencing
 
-Given "shippable soon" plus wanting all four tracks:
+Correctness backlog, Phase A, Phase B, Phase C, and Phase D are all done (see each section above for specifics and the few genuinely-open items: code signing certs, Cursor/Gemini plugins). What's left:
 
-1. **Now**: Correctness backlog + Phase A (bundling/packaging) — nothing else matters if it can't be installed and the numbers can't be trusted.
-2. **Alongside**: Phase B UX polish — much of it (loading/error states, sorting, dark-mode toggle) is small, high-value, and independent of packaging work.
-3. **Next**: Phase E native integration — natural to add once packaging exists (tray/notifications are meaningless in dev-mode-only).
-4. **Then**: Phase C (first new provider — OpenAI is the cleanest second integration) and Phase D (forecast/anomaly/budget-rules improvements) in parallel, since they touch different code paths.
-5. **Later**: Phase F, only when the data volume or sync need actually shows up.
+1. **Next**: Phase E native integration — tray icon, native menu, minimize-to-tray. Natural now that packaging (Phase A) and notifications (Phase D) already exist.
+2. **Later**: Phase F, only when the data volume or multi-device need actually shows up.

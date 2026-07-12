@@ -13,14 +13,19 @@ import {
 } from "./aggregations.js";
 import {
   getAlertRules,
-  setMonthlyBudgetRule,
+  createAlertRule,
+  updateAlertRule,
+  deleteAlertRule,
   getAlertEvents,
   acknowledgeAlertEvent,
   checkBudgetAlerts,
+  type AlertRuleInput,
 } from "./alerts.js";
 import { listSubscriptions, createSubscription, updateSubscription, deleteSubscription } from "./subscriptions.js";
-import { getReportRows, toCsv, type ReportPeriod } from "./reports.js";
+import { getReportRows, getReportSummary, toCsv, toPdfBuffer, type ReportPeriod } from "./reports.js";
 import { getMonthlyCostForecast } from "./forecast.js";
+import { getCostAnomalies } from "./anomalies.js";
+import { getInsightsSummary } from "./insights.js";
 import { listAssistantMessages, answerAssistantQuestion } from "./assistant.js";
 import { getRecommendedProjectLimit } from "./recommendations.js";
 import { startPairing, claimPairing, verifyToken, listPairedDevices, revokeDevice } from "./pairing.js";
@@ -114,8 +119,19 @@ app.get("/api/projects", async () => getProjectAnalytics());
 
 app.get("/api/alerts/rules", async () => getAlertRules());
 
-app.put<{ Body: { thresholdUsd: number; enabled: boolean } }>("/api/alerts/rules/monthly-budget", async (req) => {
-  return setMonthlyBudgetRule(req.body.thresholdUsd, req.body.enabled);
+app.post<{ Body: AlertRuleInput }>("/api/alerts/rules", async (req, reply) => {
+  const rule = await createAlertRule(req.body);
+  reply.code(201);
+  return rule;
+});
+
+app.put<{ Params: { id: string }; Body: Partial<AlertRuleInput> }>("/api/alerts/rules/:id", async (req) => {
+  return updateAlertRule(req.params.id, req.body);
+});
+
+app.delete<{ Params: { id: string } }>("/api/alerts/rules/:id", async (req, reply) => {
+  await deleteAlertRule(req.params.id);
+  reply.code(204);
 });
 
 app.get<{ Querystring: { limit?: string } }>("/api/alerts/events", async (req) => {
@@ -127,6 +143,10 @@ app.patch<{ Params: { id: string } }>("/api/alerts/events/:id/acknowledge", asyn
 });
 
 app.get("/api/forecast", async () => getMonthlyCostForecast());
+
+app.get("/api/anomalies", async () => getCostAnomalies());
+
+app.get("/api/insights", async () => getInsightsSummary());
 
 app.get("/api/subscriptions", async () => listSubscriptions());
 
@@ -272,11 +292,17 @@ app.get<{ Querystring: { period?: string; format?: string } }>("/api/reports/exp
   const period = VALID_PERIODS.includes(req.query.period as ReportPeriod)
     ? (req.query.period as ReportPeriod)
     : "month";
-  const format = req.query.format === "json" ? "json" : "csv";
-  const rows = await getReportRows(period);
+  const format = req.query.format === "json" ? "json" : req.query.format === "pdf" ? "pdf" : "csv";
   const filename = `soar-ai-tracker-${period}-report.${format}`;
-
   reply.header("Content-Disposition", `attachment; filename="${filename}"`);
+
+  if (format === "pdf") {
+    const summary = await getReportSummary(period);
+    reply.type("application/pdf");
+    return toPdfBuffer(summary);
+  }
+
+  const rows = await getReportRows(period);
   if (format === "json") {
     reply.type("application/json");
     return rows;

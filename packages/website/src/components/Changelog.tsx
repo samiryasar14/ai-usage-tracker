@@ -1,7 +1,19 @@
-import { Bug, ListChecks, Plug, Sparkles, Wrench } from "lucide-react";
+import { AlertTriangle, Bug, FileText, ListChecks, Plug, Sparkles, TrendingUp, Wrench } from "lucide-react";
 import { Reveal } from "./Reveal";
 
 const RELEASES = [
+  {
+    version: "v0.5.0",
+    date: "July 12, 2026",
+    changes: [
+      { icon: TrendingUp, text: "Smarter forecast — weekday/weekend weighting plus a month-over-month trend." },
+      { icon: AlertTriangle, text: "New Spending anomalies panel flags unusually high-cost days." },
+      { icon: Sparkles, text: "Subscriptions and usage cost are unified into one total spend figure." },
+      { icon: FileText, text: "Added PDF export alongside CSV/JSON." },
+      { icon: Sparkles, text: "Budget rules can now target a specific project or model, and support daily budgets." },
+      { icon: Sparkles, text: "A deterministic Insights panel summarizes what changed this month." },
+    ],
+  },
   {
     version: "v0.4.0",
     date: "July 12, 2026",

@@ -14,6 +14,13 @@ export async function listSubscriptions() {
   return db.subscription.findMany({ orderBy: { createdAt: "asc" } });
 }
 
+/** Combined monthly cost of every active (non-cancelled) subscription. */
+export async function getActiveSubscriptionsMonthlyTotal(): Promise<number> {
+  const db = getDb();
+  const active = await db.subscription.findMany({ where: { status: "active" }, select: { monthlyCostUsd: true } });
+  return active.reduce((sum, s) => sum + s.monthlyCostUsd, 0);
+}
+
 export async function createSubscription(input: SubscriptionInput) {
   const db = getDb();
   const subscription = await db.subscription.create({

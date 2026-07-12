@@ -319,6 +319,7 @@ export function SettingsView() {
             >
               <option value="csv">CSV</option>
               <option value="json">JSON</option>
+              <option value="pdf">PDF</option>
             </select>
           </label>
         </div>

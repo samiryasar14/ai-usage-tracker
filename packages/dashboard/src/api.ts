@@ -10,6 +10,8 @@ export interface Overview {
   todayTokens: number;
   monthlyTokens: number;
   estimatedMonthlyCost: number;
+  subscriptionCostSoFar: number;
+  totalSpendSoFar: number;
   modelsUsed: number;
   providersConnected: number;
   unpricedModels: UnpricedModel[];
@@ -51,13 +53,26 @@ export interface ProjectAnalyticsRow {
   tags: Tag[];
 }
 
+export type AlertRuleType = "monthly_budget" | "daily_budget";
+export type AlertRuleScope = "global" | "project" | "model";
+
 export interface AlertRule {
   id: string;
-  type: string;
+  type: AlertRuleType;
+  scope: AlertRuleScope;
+  scopeId: string | null;
   thresholdUsd: number;
   enabled: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AlertRuleInput {
+  type: AlertRuleType;
+  scope: AlertRuleScope;
+  scopeId?: string | null;
+  thresholdUsd: number;
+  enabled?: boolean;
 }
 
 export interface AlertEvent {
@@ -92,12 +107,28 @@ export interface MonthlyCostForecast {
   costSoFar: number;
   dailyAverage: number;
   projectedMonthlyCost: number;
+  subscriptionCost: number;
+  totalProjectedCost: number;
   elapsedDays: number;
   totalDays: number;
+  trendPercent: number;
+  weekdayAverage: number;
+  weekendAverage: number;
+}
+
+export interface InsightsSummary {
+  bullets: string[];
+}
+
+export interface CostAnomaly {
+  date: string;
+  cost: number;
+  baselineMean: number;
+  zScore: number;
 }
 
 export type ReportPeriod = "day" | "week" | "month";
-export type ReportFormat = "csv" | "json";
+export type ReportFormat = "csv" | "json" | "pdf";
 
 export interface ChatMessageDto {
   id: string;
@@ -227,11 +258,15 @@ export const api = {
   sessions: (limit = 100) => getJson<SessionHistoryRow[]>(`/api/sessions?limit=${limit}`),
   projects: () => getJson<ProjectAnalyticsRow[]>("/api/projects"),
   alertRules: () => getJson<AlertRule[]>("/api/alerts/rules"),
+  createAlertRule: (input: AlertRuleInput) => postJson<AlertRule>("/api/alerts/rules", input),
+  updateAlertRule: (id: string, input: Partial<AlertRuleInput>) =>
+    putJson<AlertRule>(`/api/alerts/rules/${id}`, input),
+  deleteAlertRule: (id: string) => del(`/api/alerts/rules/${id}`),
   alertEvents: (limit = 20) => getJson<AlertEvent[]>(`/api/alerts/events?limit=${limit}`),
-  setMonthlyBudget: (thresholdUsd: number, enabled: boolean) =>
-    putJson<AlertRule>("/api/alerts/rules/monthly-budget", { thresholdUsd, enabled }),
   acknowledgeAlertEvent: (id: string) => patchJson<AlertEvent>(`/api/alerts/events/${id}/acknowledge`, {}),
   forecast: () => getJson<MonthlyCostForecast>("/api/forecast"),
+  anomalies: () => getJson<CostAnomaly[]>("/api/anomalies"),
+  insights: () => getJson<InsightsSummary>("/api/insights"),
   subscriptions: () => getJson<Subscription[]>("/api/subscriptions"),
   createSubscription: (input: SubscriptionInput) => postJson<Subscription>("/api/subscriptions", input),
   updateSubscription: (id: string, input: Partial<SubscriptionInput>) =>

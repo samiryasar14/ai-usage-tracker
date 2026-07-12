@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  AlertTriangle,
   Bell,
   CircleDollarSign,
   CreditCard,
@@ -8,6 +9,7 @@ import {
   FileDown,
   History,
   Layers,
+  Sparkles,
   Trophy,
   TrendingUp,
   Zap,
@@ -21,6 +23,8 @@ import { SessionHistory } from "../components/SessionHistory";
 import { BudgetPanel } from "../components/BudgetPanel";
 import { SubscriptionsPanel } from "../components/SubscriptionsPanel";
 import { ReportsPanel } from "../components/ReportsPanel";
+import { AnomaliesPanel } from "../components/AnomaliesPanel";
+import { InsightsPanel } from "../components/InsightsPanel";
 import { QueryState } from "../components/QueryState";
 import { Onboarding } from "../components/Onboarding";
 import { formatCompact, formatCount, formatCurrency } from "../format";
@@ -56,11 +60,23 @@ export function DashboardView() {
   const alertRules = useQuery({ queryKey: ["alertRules"], queryFn: api.alertRules });
   const alertEvents = useQuery({ queryKey: ["alertEvents"], queryFn: () => api.alertEvents(10) });
   const forecast = useQuery({ queryKey: ["forecast"], queryFn: api.forecast, refetchInterval: 15_000 });
+  const anomalies = useQuery({ queryKey: ["anomalies"], queryFn: api.anomalies, refetchInterval: 60_000 });
+  const insights = useQuery({ queryKey: ["insights"], queryFn: api.insights, refetchInterval: 60_000 });
   const subscriptions = useQuery({ queryKey: ["subscriptions"], queryFn: api.subscriptions });
+  const projects = useQuery({ queryKey: ["projects"], queryFn: api.projects });
 
-  const saveBudget = useMutation({
-    mutationFn: ({ thresholdUsd, enabled }: { thresholdUsd: number; enabled: boolean }) =>
-      api.setMonthlyBudget(thresholdUsd, enabled),
+  const createRule = useMutation({
+    mutationFn: api.createAlertRule,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["alertRules"] }),
+  });
+
+  const toggleRuleEnabled = useMutation({
+    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) => api.updateAlertRule(id, { enabled }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["alertRules"] }),
+  });
+
+  const removeRule = useMutation({
+    mutationFn: api.deleteAlertRule,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["alertRules"] }),
   });
 
@@ -84,8 +100,6 @@ export function DashboardView() {
     mutationFn: api.deleteSubscription,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["subscriptions"] }),
   });
-
-  const monthlyBudgetRule = alertRules.data?.find((r) => r.type === "monthly_budget");
 
   const hasAnyData = (overview.data?.modelsUsed ?? 0) > 0 || (sessions.data?.length ?? 0) > 0;
   if (!overview.isLoading && !overview.isError && !hasAnyData) {
@@ -111,18 +125,36 @@ export function DashboardView() {
           icon={Layers}
         />
         <StatCard
-          label="Estimated monthly cost"
-          value={
-            overview.isLoading ? "…" : overview.data ? formatCurrency(overview.data.estimatedMonthlyCost) : "—"
-          }
+          label="Total spend so far"
+          value={overview.isLoading ? "…" : overview.data ? formatCurrency(overview.data.totalSpendSoFar) : "—"}
           icon={CircleDollarSign}
+          note={
+            overview.data && overview.data.subscriptionCostSoFar > 0
+              ? `usage ${formatCurrency(overview.data.estimatedMonthlyCost)} + subscriptions ${formatCurrency(overview.data.subscriptionCostSoFar)}`
+              : undefined
+          }
         />
         <StatCard
-          label="Projected month-end cost"
-          value={forecast.isLoading ? "…" : forecast.data ? formatCurrency(forecast.data.projectedMonthlyCost) : "—"}
+          label="Projected month-end spend"
+          value={forecast.isLoading ? "…" : forecast.data ? formatCurrency(forecast.data.totalProjectedCost) : "—"}
           icon={TrendingUp}
+          note={
+            forecast.data
+              ? `${forecast.data.trendPercent >= 0 ? "+" : ""}${forecast.data.trendPercent}% usage vs last month`
+              : undefined
+          }
+          noteTone={forecast.data ? (forecast.data.trendPercent > 0 ? "up" : "down") : "neutral"}
         />
       </div>
+
+      {(insights.data?.bullets.length ?? 0) > 0 && (
+        <section className="mt-8 rounded-lg border border-hairline bg-surface p-5">
+          <SectionHeading icon={Sparkles}>Insights</SectionHeading>
+          <div className="mt-3">
+            <InsightsPanel bullets={insights.data?.bullets ?? []} />
+          </div>
+        </section>
+      )}
 
       <section className="mt-8 rounded-lg border border-hairline bg-surface p-5">
         <SectionHeading icon={TrendingUp}>Usage timeline (30 days)</SectionHeading>
@@ -130,6 +162,15 @@ export function DashboardView() {
           <Timeline data={timeline.data ?? []} />
         </div>
       </section>
+
+      {(anomalies.data?.length ?? 0) > 0 && (
+        <section className="mt-8 rounded-lg border border-hairline bg-surface p-5">
+          <SectionHeading icon={AlertTriangle}>Spending anomalies</SectionHeading>
+          <div className="mt-3">
+            <AnomaliesPanel anomalies={anomalies.data ?? []} />
+          </div>
+        </section>
+      )}
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section className="rounded-lg border border-hairline bg-surface p-5">
@@ -176,10 +217,16 @@ export function DashboardView() {
             }}
           >
             <BudgetPanel
-              rule={monthlyBudgetRule}
+              rules={alertRules.data ?? []}
               events={alertEvents.data ?? []}
-              saving={saveBudget.isPending}
-              onSave={(thresholdUsd, enabled) => saveBudget.mutate({ thresholdUsd, enabled })}
+              projectOptions={(projects.data ?? []).map((p) => ({ id: p.projectId, label: p.name }))}
+              modelOptions={(models.data ?? []).map((m) => ({ id: m.modelName, label: m.modelName }))}
+              onCreate={(input) => createRule.mutate(input)}
+              creating={createRule.isPending}
+              onToggleEnabled={(id, enabled) => toggleRuleEnabled.mutate({ id, enabled })}
+              togglingId={toggleRuleEnabled.isPending ? (toggleRuleEnabled.variables?.id ?? null) : null}
+              onDelete={(id) => removeRule.mutate(id)}
+              deletingId={removeRule.isPending ? (removeRule.variables ?? null) : null}
               onAcknowledge={(id) => acknowledgeAlert.mutate(id)}
               acknowledgingId={acknowledgeAlert.isPending ? (acknowledgeAlert.variables ?? null) : null}
             />

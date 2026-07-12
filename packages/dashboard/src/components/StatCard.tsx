@@ -4,9 +4,18 @@ interface StatCardProps {
   label: string;
   value: string;
   icon: ComponentType<{ size?: string | number; className?: string }>;
+  /** Optional trailing note under the value, e.g. a month-over-month delta. */
+  note?: string;
+  noteTone?: "up" | "down" | "neutral";
 }
 
-export function StatCard({ label, value, icon: Icon }: StatCardProps) {
+const NOTE_TONE_CLASS: Record<NonNullable<StatCardProps["noteTone"]>, string> = {
+  up: "text-red-500",
+  down: "text-series-1",
+  neutral: "text-text-muted",
+};
+
+export function StatCard({ label, value, icon: Icon, note, noteTone = "neutral" }: StatCardProps) {
   return (
     <div className="group relative overflow-hidden rounded-lg glass-panel px-5 py-4 transition-shadow hover:shadow-[0_0_24px_-8px_var(--series-1)]">
       {/* Soft radial glow that fades in on hover — same technique as the
@@ -20,6 +29,7 @@ export function StatCard({ label, value, icon: Icon }: StatCardProps) {
         <div className="text-sm text-text-secondary">{label}</div>
       </div>
       <div className="relative mt-2 font-mono text-3xl font-semibold tabular-nums text-text-primary">{value}</div>
+      {note && <div className={`relative mt-1 text-xs ${NOTE_TONE_CLASS[noteTone]}`}>{note}</div>}
     </div>
   );
 }

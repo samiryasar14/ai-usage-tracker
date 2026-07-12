@@ -92,7 +92,12 @@ model IngestCursor {
 
 model AlertRule {
   id           String       @id @default(cuid())
-  type         String       // "monthly_budget" for now; extensible later
+  type         String       // "monthly_budget" | "daily_budget"
+  // "global" (whole account), "project" (scopeId = Project.id), or "model"
+  // (scopeId = Model.name — matched by name, not id, so the rule applies
+  // across providers/re-created rows sharing that model name).
+  scope        String       @default("global")
+  scopeId      String?
   thresholdUsd Float
   enabled      Boolean      @default(true)
   createdAt    DateTime     @default(now())
