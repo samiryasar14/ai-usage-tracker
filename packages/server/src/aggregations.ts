@@ -28,7 +28,7 @@ export async function getOverview() {
     db.request.aggregate({
       where: { timestamp: { gte: todayStart }, isSidechain: false },
       _count: true,
-      _sum: { inputTokens: true, outputTokens: true, cacheReadTokens: true, cacheCreationTokens: true },
+      _sum: { inputTokens: true, outputTokens: true, cacheReadTokens: true, cacheCreationTokens: true, cost: true },
     }),
     db.request.aggregate({
       where: { timestamp: { gte: monthStart }, isSidechain: false },
@@ -72,6 +72,7 @@ export async function getOverview() {
 
   return {
     todayRequests: todayAgg._count,
+    todayCost: todayAgg._sum.cost ?? 0,
     todayTokens: sumTokens(todayAgg._sum),
     monthlyTokens: sumTokens(monthAgg._sum),
     estimatedMonthlyCost,

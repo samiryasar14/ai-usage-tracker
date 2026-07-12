@@ -3,6 +3,14 @@ import { Reveal } from "./Reveal";
 
 const RELEASES = [
   {
+    version: "v0.6.0",
+    date: "July 12, 2026",
+    changes: [
+      { icon: Sparkles, text: "Added a system tray icon — live today/month spend in the tooltip, plus a quick menu." },
+      { icon: AlertTriangle, text: "Closing the window now minimizes to tray instead of quitting; use the tray menu to exit." },
+    ],
+  },
+  {
     version: "v0.5.0",
     date: "July 12, 2026",
     changes: [

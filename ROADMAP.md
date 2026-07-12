@@ -67,10 +67,14 @@ Done:
 
 Goal: use the fact this is a real desktop app, not just a web page in a window.
 
-- **System tray icon** — persistent tray icon showing live today/month spend, with a right-click menu (open dashboard, quick stats, quit). Currently zero `Tray` usage.
-- **Native menu** — currently just Electron's default File/Edit/View/Window/Help menu; add app-specific items (Settings, Export Report, Check for Updates once Phase A auto-update lands).
-- **OS notifications** — see Phase D; needs `preload.cjs` to stay a no-op since the main process can call `Notification` directly without renderer IPC.
-- **Minimize-to-tray / background running** — so the app can keep ingesting in the background without a visible window, surfacing spend via the tray icon.
+Done:
+
+- **System tray icon** — `createTray()` in `main.cjs`: tooltip and context menu show live "Today: $X · This month: $Y" (added `todayCost` to `getOverview()` for this), refreshed every 60s. Menu: Open Dashboard, Check for Updates, Quit.
+- **Native menu** — implemented via the tray's context menu rather than restoring the window's File/Edit/View/Window menu bar, which was deliberately removed earlier for the custom-styled window chrome (see the comment above `Menu.setApplicationMenu(null)`) — undoing that for this phase would have fought a prior intentional decision instead of building on it.
+- **OS notifications** — already done in Phase D/B.
+- **Minimize-to-tray / background running** — the window's `close` now hides instead of quitting (`isQuitting` flag, set by the tray's Quit item or `before-quit`), so the app keeps ingesting with no visible window. Also fixed a latent gap while wiring the tray icon: `assets/**/*` wasn't in the electron-builder `files` list, so a packaged build had no icon file on disk at runtime at all (only what electron-builder baked into the .exe itself) — added it.
+
+Verification note: this environment's shell has `ELECTRON_RUN_AS_NODE=1` set, which normally makes `require("electron")` return a path string instead of the real API (breaks at the first `ipcMain.handle(...)` call). Unsetting it for one test launch confirmed the app boots for real — window loads, tray/menu code runs without throwing, and the dashboard makes live API calls for 15+ seconds with no errors. Still no visual confirmation the tray icon/menu render correctly (no screenshot tool available) — worth a manual look before shipping.
 
 ## Phase F — Scale/platform hardening (later, only if needed)
 
@@ -81,7 +85,4 @@ Lower priority — flagging so they're not forgotten, not because they're urgent
 
 ## Suggested sequencing
 
-Correctness backlog, Phase A, Phase B, Phase C, and Phase D are all done (see each section above for specifics and the few genuinely-open items: code signing certs, Cursor/Gemini plugins). What's left:
-
-1. **Next**: Phase E native integration — tray icon, native menu, minimize-to-tray. Natural now that packaging (Phase A) and notifications (Phase D) already exist.
-2. **Later**: Phase F, only when the data volume or multi-device need actually shows up.
+Correctness backlog and Phases A–E are all done (see each section above for specifics and the few genuinely-open items: code signing certs, Cursor/Gemini plugins). What's left is Phase F, only when the data volume or multi-device need actually shows up — nothing else is currently blocking a ship.

@@ -2,7 +2,8 @@
 // elsewhere in the monorepo) since it's a thin bootstrap shell: spawn the
 // Fastify server as a child process, wait for it to accept connections, then
 // point a BrowserWindow at the dashboard.
-const { app, BrowserWindow, Menu, dialog, shell, ipcMain, safeStorage, Notification } = require("electron");
+const { app, BrowserWindow, Menu, Tray, nativeImage, dialog, shell, ipcMain, safeStorage, Notification } =
+  require("electron");
 const { spawn } = require("node:child_process");
 const path = require("node:path");
 const net = require("node:net");
@@ -10,9 +11,14 @@ const fs = require("node:fs");
 
 const SERVER_PORT = 4317;
 const DASHBOARD_DEV_URL = "http://localhost:5173";
+const TRAY_REFRESH_INTERVAL_MS = 60_000;
 
 let serverProcess;
 let mainWindow;
+let tray;
+// Set right before app.quit() actually proceeds, so the window's "close"
+// handler below knows to let it close for real instead of hiding to tray.
+let isQuitting = false;
 
 // Shared by the renderer-facing "show-notification" IPC handler and the
 // autoUpdater listeners below, so the isSupported/click-to-focus dance only
@@ -20,11 +26,7 @@ let mainWindow;
 function showNativeNotification(title, body) {
   if (!Notification.isSupported()) return;
   const notification = new Notification({ title, body });
-  notification.on("click", () => {
-    if (!mainWindow || mainWindow.isDestroyed()) return;
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.focus();
-  });
+  notification.on("click", showAndFocusWindow);
   notification.show();
 }
 
@@ -48,6 +50,13 @@ function waitForPort(port, host, timeoutMs) {
     }
     attempt();
   });
+}
+
+function iconPath() {
+  // Same relative layout in dev and packaged (asar) builds — see the
+  // "assets/**/*" entry added to the `files` build config for why this
+  // resolves correctly once packaged too.
+  return path.join(__dirname, "..", "assets", "icon.ico");
 }
 
 function packagedDbPath() {
@@ -138,6 +147,77 @@ function startServer() {
   else startServerDev();
 }
 
+function showAndFocusWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+}
+
+// electron-updater is only meaningful for packaged builds (there's nothing
+// to "update" running from source) — lazily required so importing it never
+// affects dev mode.
+function checkForUpdates({ silent } = {}) {
+  if (!app.isPackaged) return;
+  try {
+    const { autoUpdater } = require("electron-updater");
+    const check = silent ? autoUpdater.checkForUpdatesAndNotify() : autoUpdater.checkForUpdates();
+    check.catch((err) => console.error("Update check failed:", err));
+  } catch (err) {
+    console.error("Auto-update unavailable:", err);
+  }
+}
+
+// Fire-and-forget: called from the tray's own refresh loop, so a failed
+// fetch (server still starting, briefly unreachable) just leaves the last
+// good tooltip/menu in place rather than showing an error anywhere.
+async function fetchOverviewSummary() {
+  try {
+    const res = await fetch(`http://127.0.0.1:${SERVER_PORT}/api/overview`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+function formatUsd(n) {
+  return `$${(typeof n === "number" ? n : 0).toFixed(2)}`;
+}
+
+async function createTray() {
+  tray = new Tray(nativeImage.createFromPath(iconPath()));
+  tray.setToolTip("Soar AI Tracker");
+  tray.on("click", showAndFocusWindow);
+
+  async function refresh() {
+    const overview = await fetchOverviewSummary();
+    const spendLine = overview
+      ? `Today: ${formatUsd(overview.todayCost)}  ·  This month: ${formatUsd(overview.totalSpendSoFar)}`
+      : "Spend unavailable";
+    tray.setToolTip(`Soar AI Tracker\n${spendLine}`);
+    tray.setContextMenu(
+      Menu.buildFromTemplate([
+        { label: spendLine, enabled: false },
+        { type: "separator" },
+        { label: "Open Dashboard", click: showAndFocusWindow },
+        { label: "Check for Updates", enabled: app.isPackaged, click: () => checkForUpdates() },
+        { type: "separator" },
+        {
+          label: "Quit",
+          click: () => {
+            isQuitting = true;
+            app.quit();
+          },
+        },
+      ]),
+    );
+  }
+
+  await refresh();
+  setInterval(refresh, TRAY_REFRESH_INTERVAL_MS);
+}
+
 async function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
@@ -150,6 +230,14 @@ async function createWindow() {
   mainWindow = win;
   win.on("closed", () => {
     if (mainWindow === win) mainWindow = undefined;
+  });
+  // Closing the window minimizes to tray instead of quitting — the app keeps
+  // ingesting in the background. isQuitting (set from the tray's Quit item
+  // and before-quit) is the only way past this.
+  win.on("close", (event) => {
+    if (isQuitting) return;
+    event.preventDefault();
+    win.hide();
   });
 
   if (!app.isPackaged) {
@@ -242,6 +330,7 @@ app.whenReady().then(async () => {
     }
   }
   await createWindow();
+  await createTray();
 
   if (app.isPackaged) {
     // Checks releases at sysamiryasar/soar-ai-tracker (see the "publish"
@@ -257,24 +346,29 @@ app.whenReady().then(async () => {
       autoUpdater.on("update-downloaded", () => {
         showNativeNotification("Update ready to install", "Restart Soar AI Tracker to apply the update.");
       });
-      autoUpdater.checkForUpdatesAndNotify().catch((err) => {
-        console.error("Auto-update check failed:", err);
-      });
     } catch (err) {
       console.error("Auto-update unavailable:", err);
     }
+    checkForUpdates({ silent: true });
   }
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    else showAndFocusWindow();
   });
 });
 
 app.on("window-all-closed", () => {
+  // Reachable on macOS (closing the last window there doesn't quit by
+  // convention) and as a safety net elsewhere — the tray's own Quit item is
+  // the normal path to actually exiting now that closing the window hides
+  // it instead.
   if (serverProcess) serverProcess.kill();
   if (process.platform !== "darwin") app.quit();
 });
 
 app.on("before-quit", () => {
+  isQuitting = true;
   if (serverProcess) serverProcess.kill();
+  if (tray) tray.destroy();
 });

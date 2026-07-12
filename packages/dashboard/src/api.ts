@@ -7,6 +7,7 @@ export interface UnpricedModel {
 
 export interface Overview {
   todayRequests: number;
+  todayCost: number;
   todayTokens: number;
   monthlyTokens: number;
   estimatedMonthlyCost: number;

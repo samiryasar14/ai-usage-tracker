@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.6.0 — 2026-07-12
+
+- Added a system tray icon showing live today/month spend in the tooltip, with an Open Dashboard / Check for Updates / Quit menu.
+- **Behavior change**: closing the window now minimizes to tray instead of quitting — the app keeps tracking usage in the background. Use the tray icon's Quit to actually exit.
+- Fixed the packaged app shipping with no icon file on disk at runtime (only what was baked into the .exe icon itself) — needed for the new tray icon, but was a latent gap either way.
+
 ## v0.5.0 — 2026-07-12
 
 - Smarter monthly forecast — weighs remaining days by weekday/weekend average instead of a single flat daily rate, and shows a month-over-month trend on the dashboard.

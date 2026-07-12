@@ -1,6 +1,6 @@
 {
   "name": "@ai-usage-tracker/desktop",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "license": "MIT",
   "main": "src/main.cjs",
@@ -22,7 +22,7 @@
     "directories": {
       "output": "release"
     },
-    "files": ["src/**/*", "package.json"],
+    "files": ["src/**/*", "assets/**/*", "package.json"],
     "extraResources": [
       { "from": "../server/dist", "to": "server", "filter": ["**/*"] },
       { "from": "../server/deploy/node_modules", "to": "server/node_modules", "filter": ["**/*"] },
