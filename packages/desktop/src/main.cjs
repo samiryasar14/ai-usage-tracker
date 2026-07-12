@@ -237,7 +237,7 @@ app.whenReady().then(async () => {
   await createWindow();
 
   if (app.isPackaged) {
-    // Checks releases at samiryasar14/soar-ai-tracker (see the "publish"
+    // Checks releases at sysamiryasar/soar-ai-tracker (see the "publish"
     // config in package.json) for a newer version than this build's.
     try {
       const { autoUpdater } = require("electron-updater");

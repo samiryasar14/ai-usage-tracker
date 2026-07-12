@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AmbientBackground } from "./components/AmbientBackground";
+import { Changelog } from "./components/Changelog";
 import { Download } from "./components/Download";
 import { FAQ } from "./components/FAQ";
 import { FinalCTA } from "./components/FinalCTA";
@@ -47,6 +48,7 @@ export function App() {
           <Security />
           <OpenSource />
           <FAQ />
+          <Changelog />
           <Download />
           <FinalCTA />
         </main>

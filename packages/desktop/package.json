@@ -1,6 +1,6 @@
 {
   "name": "@ai-usage-tracker/desktop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "license": "MIT",
   "main": "src/main.cjs",
@@ -41,7 +41,7 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "samiryasar14",
+      "owner": "sysamiryasar",
       "repo": "soar-ai-tracker"
     }
   }

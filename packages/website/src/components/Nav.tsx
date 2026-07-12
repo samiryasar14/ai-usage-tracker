@@ -48,6 +48,9 @@ export function Nav({ dark, onToggleDark }: NavProps) {
           <a href="#faq" className="transition-colors hover:text-text-primary">
             FAQ
           </a>
+          <a href="#changelog" className="transition-colors hover:text-text-primary">
+            Changelog
+          </a>
         </nav>
 
         <div className="flex items-center gap-2">
