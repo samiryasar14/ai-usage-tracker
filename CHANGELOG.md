@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.7.0 — 2026-07-12
+
+- Data retention now archives before it deletes: pruned days are rolled up into a daily total first, so the usage timeline keeps showing history past your configured retention window instead of that history just disappearing.
+- Added manual multi-device sync (Settings → Multi-device sync): export your usage data on one machine, import it on another. Safe to import the same file more than once — duplicate requests are never double-counted.
+
 ## v0.6.0 — 2026-07-12
 
 - Added a system tray icon showing live today/month spend in the tooltip, with an Open Dashboard / Check for Updates / Quit menu.

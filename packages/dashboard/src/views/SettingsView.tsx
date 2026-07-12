@@ -1,9 +1,20 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, DatabaseBackup, FileDown, FolderOpen, Plug, Smartphone, UserCircle } from "lucide-react";
+import {
+  Bell,
+  DatabaseBackup,
+  Download,
+  FileDown,
+  FolderOpen,
+  Plug,
+  RefreshCw,
+  Smartphone,
+  Upload,
+  UserCircle,
+} from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import type { ComponentType, ReactNode } from "react";
-import { api, type PairingSession, type ReportFormat, type ReportPeriod } from "../api";
+import type { ChangeEvent, ComponentType, ReactNode } from "react";
+import { api, syncExportUrl, type PairingSession, type ReportFormat, type ReportPeriod } from "../api";
 import { ProviderCard } from "../components/ProviderCard";
 
 const isElectron = window.electronAPI?.isElectron === true;
@@ -57,6 +68,36 @@ export function SettingsView() {
     mutationFn: () => window.electronAPI!.backupDatabase(),
     onSuccess: (result) => setBackupMessage(result.ok ? "Backup saved." : result.error),
   });
+
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+
+  const importSync = useMutation({
+    mutationFn: (records: unknown[]) => api.importSyncBundle(records),
+    onSuccess: (result) => {
+      setImportMessage(
+        `Processed ${result.total} record${result.total === 1 ? "" : "s"} — duplicates are skipped automatically.`,
+      );
+      queryClient.invalidateQueries();
+    },
+    onError: () => setImportMessage("Import failed — check that the file is a valid sync export."),
+  });
+
+  async function handleImportFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setImportMessage(null);
+    try {
+      const parsed = JSON.parse(await file.text());
+      if (!Array.isArray(parsed)) {
+        setImportMessage("That file doesn't look like a sync export (expected a JSON array).");
+        return;
+      }
+      importSync.mutate(parsed);
+    } catch {
+      setImportMessage("Couldn't read that file as JSON.");
+    }
+  }
 
   const providers = useQuery({ queryKey: ["providers"], queryFn: api.providers, refetchInterval: 30_000 });
 
@@ -258,6 +299,36 @@ export function SettingsView() {
           </div>
         </section>
       )}
+
+      <section className="mt-8 rounded-lg border border-hairline bg-surface p-5">
+        <SectionHeading icon={RefreshCw}>Multi-device sync</SectionHeading>
+        <p className="mt-3 text-sm text-text-secondary">
+          Manually consolidate usage tracked on another machine into this one — this isn&apos;t automatic. Export a
+          sync file here, then import it on the other device (or bring theirs into this one). Safe to import the
+          same file more than once; existing requests are never duplicated.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <a
+            href={syncExportUrl()}
+            className="flex items-center gap-1.5 rounded-md border border-hairline px-3 py-1.5 text-sm font-medium text-text-primary transition-colors hover:bg-hairline/20 focus:outline-none focus:ring-2 focus:ring-series-1 focus:ring-offset-2 focus:ring-offset-surface"
+          >
+            <Download size={14} />
+            Export Usage Data
+          </a>
+          <label className="flex cursor-pointer items-center gap-1.5 rounded-md bg-text-primary px-3 py-1.5 text-sm font-medium text-surface transition-colors hover:opacity-90 focus-within:outline-none focus-within:ring-2 focus-within:ring-series-1 focus-within:ring-offset-2 focus-within:ring-offset-surface">
+            <Upload size={14} />
+            {importSync.isPending ? "Importing…" : "Import Usage Data"}
+            <input
+              type="file"
+              accept="application/json"
+              onChange={handleImportFile}
+              disabled={importSync.isPending}
+              className="hidden"
+            />
+          </label>
+          {importMessage && <span className="text-sm text-text-muted">{importMessage}</span>}
+        </div>
+      </section>
 
       <section className="mt-8 rounded-lg border border-hairline bg-surface p-5">
         <SectionHeading icon={Bell}>Notifications & data</SectionHeading>

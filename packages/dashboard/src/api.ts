@@ -252,6 +252,15 @@ export function reportExportUrl(period: ReportPeriod, format: ReportFormat): str
   return `${API_BASE}/api/reports/export?period=${period}&format=${format}`;
 }
 
+export function syncExportUrl(): string {
+  return `${API_BASE}/api/sync/export`;
+}
+
+export interface SyncImportResult {
+  imported: number;
+  total: number;
+}
+
 export const api = {
   overview: () => getJson<Overview>("/api/overview"),
   timeline: (days = 30) => getJson<TimelineDay[]>(`/api/timeline?days=${days}`),
@@ -268,6 +277,7 @@ export const api = {
   forecast: () => getJson<MonthlyCostForecast>("/api/forecast"),
   anomalies: () => getJson<CostAnomaly[]>("/api/anomalies"),
   insights: () => getJson<InsightsSummary>("/api/insights"),
+  importSyncBundle: (records: unknown[]) => postJson<SyncImportResult>("/api/sync/import", records),
   subscriptions: () => getJson<Subscription[]>("/api/subscriptions"),
   createSubscription: (input: SubscriptionInput) => postJson<Subscription>("/api/subscriptions", input),
   updateSubscription: (id: string, input: Partial<SubscriptionInput>) =>

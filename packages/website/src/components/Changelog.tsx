@@ -3,6 +3,14 @@ import { Reveal } from "./Reveal";
 
 const RELEASES = [
   {
+    version: "v0.7.0",
+    date: "July 12, 2026",
+    changes: [
+      { icon: Sparkles, text: "Data retention now archives daily totals before deleting, so trend charts survive past the retention window." },
+      { icon: Sparkles, text: "Added manual multi-device sync — export usage data on one machine, import it on another." },
+    ],
+  },
+  {
     version: "v0.6.0",
     date: "July 12, 2026",
     changes: [

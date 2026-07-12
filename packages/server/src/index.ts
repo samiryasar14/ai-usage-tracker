@@ -3,7 +3,8 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import websocket from "@fastify/websocket";
 import { getClaudeProjectsDir } from "@ai-usage-tracker/plugin-claude-code";
-import { runIngestionCycle } from "./ingest.js";
+import { runIngestionCycle, persistRecords } from "./ingest.js";
+import { exportSyncBundle, parseSyncBundle } from "./sync.js";
 import {
   getOverview,
   getTimeline,
@@ -34,7 +35,8 @@ import { listTags, createTag, deleteTag, addTagToProject, removeTagFromProject }
 import { listProjectNotes, addProjectNote, deleteNote } from "./notes.js";
 import { listSavedViews, createSavedView, deleteSavedView } from "./savedViews.js";
 import { getNews } from "./news.js";
-import { getSettings, setSetting, pruneOldRequests, SETTING_KEYS, type SettingKey } from "./settings.js";
+import { getSettings, setSetting, SETTING_KEYS, type SettingKey } from "./settings.js";
+import { pruneOldRequests } from "./archive.js";
 import { getProviderStatuses, setProviderEnabled, PROVIDER_PLUGINS } from "./providers.js";
 
 const PORT = Number(process.env.PORT ?? 4317);
@@ -309,6 +311,27 @@ app.get<{ Querystring: { period?: string; format?: string } }>("/api/reports/exp
   }
   reply.type("text/csv");
   return toCsv(rows);
+});
+
+app.get("/api/sync/export", async (_req, reply) => {
+  const bundle = await exportSyncBundle();
+  reply.header(
+    "Content-Disposition",
+    `attachment; filename="soar-ai-tracker-sync-${new Date().toISOString().slice(0, 10)}.json"`,
+  );
+  reply.type("application/json");
+  return bundle;
+});
+
+app.post("/api/sync/import", async (req, reply) => {
+  const records = parseSyncBundle(req.body);
+  if (records.length === 0) {
+    reply.code(400);
+    return { error: "No valid usage records found in the uploaded file." };
+  }
+  const imported = await persistRecords(records);
+  broadcastRefresh();
+  return { imported, total: records.length };
 });
 
 async function ingestAndNotify() {

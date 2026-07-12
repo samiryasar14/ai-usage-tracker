@@ -76,13 +76,15 @@ Done:
 
 Verification note: this environment's shell has `ELECTRON_RUN_AS_NODE=1` set, which normally makes `require("electron")` return a path string instead of the real API (breaks at the first `ipcMain.handle(...)` call). Unsetting it for one test launch confirmed the app boots for real — window loads, tray/menu code runs without throwing, and the dashboard makes live API calls for 15+ seconds with no errors. Still no visual confirmation the tray icon/menu render correctly (no screenshot tool available) — worth a manual look before shipping.
 
-## Phase F — Scale/platform hardening (later, only if needed)
+## Phase F — Scale/platform hardening
 
-Lower priority — flagging so they're not forgotten, not because they're urgent:
+Built ahead of an actual trigger (data volume, multi-device need) at the user's request rather than waiting — both items below were previously flagged as "later, only if needed."
 
-- **Data retention/archival** — a user-configurable retention window now exists (Settings → "Keep detailed request history for", default "Forever") with real pruning on each ingestion cycle. Still open: aggregate-and-archive (rather than hard-delete) older rows, so long-term trend charts survive a short retention window.
-- **Multi-device sync** — explicitly out of scope unless requested later; the local-first single-machine design (`IngestCursor` keyed by absolute file path) is a deliberate simplicity choice, not an oversight. Only revisit if cross-machine dashboards become a real need.
+Done:
+
+- **Data retention/archival** — `pruneOldRequests()` (now in `archive.ts`) rolls each about-to-be-pruned day into `DailyUsageArchive` (date, requests, tokens, cost) before deleting its `Request` rows. `getTimeline()` merges archive rows for dates its live query can no longer see, so the usage chart's history doesn't stop at the retention window. Detail (per-project/per-model breakdown, individual sessions) is still gone for archived days — only the day's totals survive. Verified against a throwaway copy of the dev database (never run against real user data as part of this work): a 14-day retention setting correctly archived and deleted exactly the rows past the cutoff, and `getTimeline(120)` correctly pulled in the archived days.
+- **Multi-device sync** — manual, file-based, not automatic/real-time: `GET /api/sync/export` dumps every `Request` row as a portable bundle; `POST /api/sync/import` re-runs it through the same `persistRecords()` pipeline ingestion already uses. Upsert-by-`externalId` (already how `persistRecords` works, and `externalId` is `@unique` at the schema level) makes re-importing the same bundle a safe no-op and naturally merges two machines' distinct data with no separate conflict-resolution logic needed. Settings → "Multi-device sync" has the export link and an import file picker. This is deliberately not automatic sync (no background network protocol, no cloud relay) — the user exports and imports by hand when they want to consolidate.
 
 ## Suggested sequencing
 
-Correctness backlog and Phases A–E are all done (see each section above for specifics and the few genuinely-open items: code signing certs, Cursor/Gemini plugins). What's left is Phase F, only when the data volume or multi-device need actually shows up — nothing else is currently blocking a ship.
+Correctness backlog and Phases A–F are all done (see each section above for specifics and the few genuinely-open items: code signing certs, Cursor/Gemini plugins). Nothing is currently blocking a ship.

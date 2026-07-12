@@ -26,19 +26,9 @@ export async function setSetting(key: SettingKey, value: string) {
   });
 }
 
-/**
- * Deletes Request rows older than the configured retention window. No-op
- * unless the user has explicitly set `dataRetentionDays` — the feature
- * defaults to "keep forever" so this never deletes usage history unless
- * asked to.
- */
-export async function pruneOldRequests(): Promise<number> {
+/** The configured retention window in days, or 0 if unset ("keep forever"). See archive.ts for how this is enforced. */
+export async function getRetentionDays(): Promise<number> {
   const db = getDb();
   const setting = await db.setting.findUnique({ where: { key: "dataRetentionDays" } });
-  const days = setting ? Number(setting.value) : 0;
-  if (!days || days <= 0) return 0;
-
-  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-  const result = await db.request.deleteMany({ where: { timestamp: { lt: cutoff } } });
-  return result.count;
+  return setting ? Number(setting.value) : 0;
 }

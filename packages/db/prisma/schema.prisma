@@ -212,3 +212,16 @@ model Setting {
   key   String @id
   value String
 }
+
+// A day's worth of Request rows, rolled up right before they're deleted by
+// the data-retention prune (see packages/server/src/archive.ts). Lets
+// long-term trend charts (getTimeline) keep showing history past the
+// configured retention window — detail (per-project/per-model breakdown) is
+// still lost, only the day's totals survive.
+model DailyUsageArchive {
+  date       String   @id // "YYYY-MM-DD"
+  requests   Int
+  tokens     Int
+  cost       Float
+  archivedAt DateTime @default(now())
+}

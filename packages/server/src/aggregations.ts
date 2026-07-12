@@ -1,5 +1,6 @@
 import { getDb } from "@ai-usage-tracker/db";
 import { getActiveSubscriptionsMonthlyTotal } from "./subscriptions.js";
+import { getArchivedDailyUsage } from "./archive.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -89,27 +90,37 @@ export async function getTimeline(days: number) {
   // Prisma stores SQLite DateTime columns as integer milliseconds-since-epoch,
   // so grouping/filtering must go through unixepoch (millis / 1000), not ISO strings.
   const sinceMs = Date.now() - days * 24 * 60 * 60 * 1000;
+  const sinceDate = new Date(sinceMs).toISOString().slice(0, 10);
 
   // better-sqlite3 returns COUNT/SUM-over-integer-columns as BigInt; cast to
   // Number for JSON serialization (cost is REAL so it comes back as a number already).
-  const rows = await db.$queryRaw<Array<{ day: string; requests: bigint; tokens: bigint | null; cost: number | null }>>`
-    SELECT
-      date(timestamp / 1000, 'unixepoch') as day,
-      COUNT(*) as requests,
-      SUM(inputTokens + outputTokens + cacheReadTokens + cacheCreationTokens) as tokens,
-      SUM(cost) as cost
-    FROM Request
-    WHERE timestamp >= ${sinceMs} AND isSidechain = 0
-    GROUP BY day
-    ORDER BY day ASC
-  `;
+  const [liveRows, archivedRows] = await Promise.all([
+    db.$queryRaw<Array<{ day: string; requests: bigint; tokens: bigint | null; cost: number | null }>>`
+      SELECT
+        date(timestamp / 1000, 'unixepoch') as day,
+        COUNT(*) as requests,
+        SUM(inputTokens + outputTokens + cacheReadTokens + cacheCreationTokens) as tokens,
+        SUM(cost) as cost
+      FROM Request
+      WHERE timestamp >= ${sinceMs} AND isSidechain = 0
+      GROUP BY day
+      ORDER BY day ASC
+    `,
+    getArchivedDailyUsage(sinceDate),
+  ]);
 
-  return rows.map((r) => ({
-    day: r.day,
-    requests: Number(r.requests),
-    tokens: Number(r.tokens ?? 0),
-    cost: r.cost ?? 0,
-  }));
+  // Days pruned past the retention window only exist in the archive (coarser
+  // — no per-project/per-model breakdown, just the day's totals) — merge
+  // them in so the chart's history doesn't just stop at the retention
+  // window. Live rows always win on overlap, though in practice a day is
+  // archived exactly once, right before its Request rows are deleted.
+  const byDate = new Map<string, { requests: number; tokens: number; cost: number }>();
+  for (const a of archivedRows) byDate.set(a.date, { requests: a.requests, tokens: a.tokens, cost: a.cost });
+  for (const r of liveRows) {
+    byDate.set(r.day, { requests: Number(r.requests), tokens: Number(r.tokens ?? 0), cost: r.cost ?? 0 });
+  }
+
+  return [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([day, v]) => ({ day, ...v }));
 }
 
 export async function getModelLeaderboard() {
